@@ -1,2 +1,2 @@
-# regitry-outlier-detection
+# registry-outlier-detection
 Cross Registry Implant Outlier Detection
