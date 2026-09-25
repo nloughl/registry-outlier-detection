@@ -1,4 +1,4 @@
-# regitry-outlier-detection
+# registry-outlier-detection
 Cross Registry Implant Outlier Detection
 - Extract data from registry annual reports (publicly available)
 - apply statistical framework for outlier screening 
