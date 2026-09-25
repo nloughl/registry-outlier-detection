@@ -1,0 +1,48 @@
+registry: AOANJRR
+country: Australia
+report_year: 2025
+data_period: "1999-09-01 to 2024-12-31"
+pdf_glob: "AOANJRR*2025*.pdf"
+
+tables:
+  - key: uka_prosthesis_combination
+    table_id: KP17
+    title: Cumulative Percent Revision of Primary Unicompartmental Knee Replacement by Prosthesis Combination
+    procedures:
+      UKA: {}              # whole table is UKA
+    caption: 'Table KP17 Cumulative Percent Revision of Primary Unicompartmental Knee Replacement by Prosthesis Combination'
+    continuation: null     # single page
+    metric:
+      type: cumulative_percent_revision
+      method: Kaplan-Meier (1-KM), percent
+      ci_level: 0.95
+      population: "Modern prostheses (used in the report year); prosthesis combinations with >200 procedures"
+    anchor: n_total
+    label_hook: aoanjrr_combination
+    fill_down: [femoral]
+    columns:
+      - {name: femoral,   header: ["Uni Femoral"], kind: label, align: left}
+      - {name: tibial,    header: ["Uni Tibial"],  kind: label, align: left}
+      - {name: n_revised, header: ["Revised"],     kind: int}
+      - {name: n_total,   header: ["Total"],       kind: int}
+      - {name: t1,  header: ["1 Yr"],   kind: est_ci, time: 1}
+      - {name: t3,  header: ["3 Yrs"],  kind: est_ci, time: 3}
+      - {name: t5,  header: ["5 Yrs"],  kind: est_ci, time: 5}
+      - {name: t10, header: ["10 Yrs"], kind: est_ci, time: 10}
+      - {name: t15, header: ["15 Yrs"], kind: est_ci, time: 15}
+      - {name: t20, header: ["20 Yrs"], kind: est_ci, time: 20}
+    end_patterns: ['^Note:', '^Only prostheses']
+    row_types:
+      total: '^TOTAL$'
+      other: '^Other \(\d+\)'
+    expect:
+      min_rows: 10
+      totals_check: true   # device rows (incl. Other) must sum to the TOTAL row
+
+  - key: uka_identified_outliers
+    table_id: IP16
+    title: Revision Rate of Unicompartmental Knee Prostheses Identified as Having a Higher than Anticipated Rate of Revision
+    procedures:
+      UKA: {}
+    caption: 'Table IP16 Revision Rate of Unicompartmental Knee Prostheses Identified as Having a Higher than Anticipated Rate'
+    enabled: false         # TODO: registry-flagged outliers (useful ground truth) - parser not built yet

@@ -1,1 +1,17 @@
-*/pdfs
+# registry report PDFs (large, and redistributing them is not ours to do)
+pdfs/
+manual/
+review/
+tests/**/*.csv
+# images cropped from the reports for OCR checking
+review/*.png
+# Excel copy is regenerated from the CSVs
+outputs/**/*.xlsx
+outputs/**/*.csv
+!outputs/UKA/UKA_long.csv
+
+__pycache__/
+*.pyc
+.pytest_cache/
+.Rproj.user/
+.Rhistory

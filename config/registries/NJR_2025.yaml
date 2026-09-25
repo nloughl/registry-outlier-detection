@@ -1,0 +1,44 @@
+registry: NJR
+country: England, Wales, Northern Ireland, Isle of Man, Guernsey
+report_year: 2025
+data_period: "to 2024-12-31"
+pdf_glob: "NJR*2025*Knees*.pdf"
+
+tables:
+  - key: uka_brand
+    table_id: "3.K8"
+    title: KM estimates of cumulative revision (95% CI) by unicompartmental knee replacement brands
+    procedures:
+      UKA:
+        sections: ['^Unicondylar$']     # keep medial/lateral unicondylar; drop patellofemoral & multicompartmental
+        keep_row_types: [total]         # keep the 'All unicompartmental' summary row
+    caption: 'Table 3\.K8 KM estimates of cumulative revision'
+    continuation: 'Table 3\.K8 \(continued\)'
+    stop_caption: 'Table 3\.K9'         # table ends where the next one starts
+    metric:
+      type: cumulative_revision_km
+      method: Kaplan-Meier (1-KM), percent
+      ci_level: 0.95
+      population: "Brands used in >=1,000 primary knee operations (multicompartmental >=100)"
+      low_at_risk_rule: "Blue italics: <=250 cases at risk at that time point"
+      blank_rule: "Blank: fewer than 10 at risk"
+    anchor: n_total
+    x_range: [40, 550]                  # exclude rotated side-tab text at the page edge
+    label_hook: njr_brand
+    columns:
+      - {name: brand, header: ["Brand"], kind: label, align: left}
+      - {name: n_total, header: ["N"],   kind: int}
+      - {name: age,   header: ["(IQR)"], kind: median_iqr}
+      - {name: male_pct, header: ["(%)"], kind: number}
+      - {name: t1,  header: ["1 year"],   kind: est_ci, time: 1}
+      - {name: t3,  header: ["3 years"],  kind: est_ci, time: 3}
+      - {name: t5,  header: ["5 years"],  kind: est_ci, time: 5}
+      - {name: t10, header: ["10 years"], kind: est_ci, time: 10}
+      - {name: t15, header: ["15 years"], kind: est_ci, time: 15}
+      - {name: t20, header: ["20 years"], kind: est_ci, time: 20}
+    section_patterns: ['^Unicondylar$', '^Patellofemoral$', '^Multicompartmental$', '^Multi-compartmental$']
+    end_patterns: ['^Notes?:']
+    row_types:
+      total: '^All unicompartmental'
+    expect:
+      min_rows: 12
