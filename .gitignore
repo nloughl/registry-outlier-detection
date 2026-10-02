@@ -11,6 +11,10 @@ outputs/**/*.xlsx
 outputs/**/*.csv
 !outputs/UKA/UKA_long.csv
 !outputs/UKA/UKA_casemix_long.csv
+!outputs/ANKLE/ANKLE_long.csv
+!outputs/ANKLE/ANKLE_casemix_long.csv
+!outputs/ELBOW/ELBOW_long.csv
+!outputs/ELBOW/ELBOW_casemix_long.csv
 
 __pycache__/
 *.pyc

@@ -1,6 +1,69 @@
 # Pages for each registry table. Written by `locate`; set status to 'confirmed'
 # (or run `python -m regextract confirm`) after checking the pages in the PDF.
 # A changed PDF (different sha256) is re-located and needs re-confirming.
+AOANJRR_2025/ankle_diagnosis:
+  confirmed_on: '2026-10-02'
+  located_on: '2026-10-02'
+  pages:
+  - 12
+  pdf: 2025-ar-demo-ankle-supplementary-report-aoanjrr.pdf
+  sha256: 207fb2feeb6126641aacb7afc235f764910d91b567292dc012245d62551edc61
+  status: confirmed
+  table_id: A11
+AOANJRR_2025/ankle_period:
+  confirmed_on: '2026-10-02'
+  located_on: '2026-10-02'
+  pages:
+  - 14
+  pdf: 2025-ar-demo-ankle-supplementary-report-aoanjrr.pdf
+  sha256: 207fb2feeb6126641aacb7afc235f764910d91b567292dc012245d62551edc61
+  status: confirmed
+  table_id: A14
+AOANJRR_2025/ankle_prosthesis_combination:
+  confirmed_on: '2026-10-02'
+  located_on: '2026-10-02'
+  pages:
+  - 15
+  pdf: 2025-ar-demo-ankle-supplementary-report-aoanjrr.pdf
+  sha256: 207fb2feeb6126641aacb7afc235f764910d91b567292dc012245d62551edc61
+  status: confirmed
+  table_id: A15
+AOANJRR_2025/elbow_class_diagnosis:
+  confirmed_on: '2026-10-02'
+  located_on: '2026-10-02'
+  pages:
+  - 18
+  pdf: 2025 Demo Elbow Wrist Supplementary Report AOANJRR.pdf
+  sha256: 90825915cdd5d1f34a3c41e1367f94117cddcd1e6f7f782dc94679180fdd8509
+  status: confirmed
+  table_id: ET9
+AOANJRR_2025/elbow_total_stem_fracture:
+  confirmed_on: '2026-10-02'
+  located_on: '2026-10-02'
+  pages:
+  - 17
+  pdf: 2025 Demo Elbow Wrist Supplementary Report AOANJRR.pdf
+  sha256: 90825915cdd5d1f34a3c41e1367f94117cddcd1e6f7f782dc94679180fdd8509
+  status: confirmed
+  table_id: ET6
+AOANJRR_2025/elbow_total_stem_oa:
+  confirmed_on: '2026-10-02'
+  located_on: '2026-10-02'
+  pages:
+  - 17
+  pdf: 2025 Demo Elbow Wrist Supplementary Report AOANJRR.pdf
+  sha256: 90825915cdd5d1f34a3c41e1367f94117cddcd1e6f7f782dc94679180fdd8509
+  status: confirmed
+  table_id: ET7
+AOANJRR_2025/elbow_total_stem_ra:
+  confirmed_on: '2026-10-02'
+  located_on: '2026-10-02'
+  pages:
+  - 17
+  pdf: 2025 Demo Elbow Wrist Supplementary Report AOANJRR.pdf
+  sha256: 90825915cdd5d1f34a3c41e1367f94117cddcd1e6f7f782dc94679180fdd8509
+  status: confirmed
+  table_id: ET8
 AOANJRR_2025/uka_casemix_sex_age:
   confirmed_on: '2026-09-28'
   located_on: '2026-09-28'
@@ -35,6 +98,42 @@ EPRD_2024/knee_femorotibial_combination:
   sha256: 1e5a46e39b57a4c5bcf197f38c19d9ca5ed4a7a353d92631dbb17174259610e8
   status: confirmed
   table_id: '52'
+LROI_2025/ankle_overall:
+  confirmed_on: '2026-10-02'
+  located_on: '2026-10-02'
+  pages:
+  - 153
+  pdf: pdf-lroi-report-2025-3.pdf
+  sha256: ff8f2879701617b45216b95597a3ffb154cb56cbc246661bfe9ad00a62ecc226
+  status: confirmed
+  table_id: A014B
+LROI_2025/ankle_procedure_period:
+  confirmed_on: '2026-10-02'
+  located_on: '2026-10-02'
+  pages:
+  - 153
+  pdf: pdf-lroi-report-2025-3.pdf
+  sha256: ff8f2879701617b45216b95597a3ffb154cb56cbc246661bfe9ad00a62ecc226
+  status: confirmed
+  table_id: A015B
+LROI_2025/elbow_overall:
+  confirmed_on: '2026-10-02'
+  located_on: '2026-10-02'
+  pages:
+  - 224
+  pdf: pdf-lroi-report-2025-3.pdf
+  sha256: ff8f2879701617b45216b95597a3ffb154cb56cbc246661bfe9ad00a62ecc226
+  status: confirmed
+  table_id: E016B
+LROI_2025/elbow_type:
+  confirmed_on: '2026-10-02'
+  located_on: '2026-10-02'
+  pages:
+  - 224
+  pdf: pdf-lroi-report-2025-3.pdf
+  sha256: ff8f2879701617b45216b95597a3ffb154cb56cbc246661bfe9ad00a62ecc226
+  status: confirmed
+  table_id: E017B
 LROI_2025/uka_cemented_component:
   confirmed_on: '2026-09-25'
   located_on: '2026-09-25'
@@ -62,6 +161,43 @@ LROI_2025/uka_uncemented_component:
   sha256: ff8f2879701617b45216b95597a3ffb154cb56cbc246661bfe9ad00a62ecc226
   status: confirmed
   table_id: K055
+NJR_2025/ankle_brand:
+  confirmed_on: '2026-10-02'
+  located_on: '2026-10-02'
+  pages:
+  - 36
+  pdf: NJR 22nd Annual Report 2025_Ankles.pdf
+  sha256: 7c7ae3f2ed6df0de179c28d2cb2572556e6ede722db3e2d2e8fbf41062358b53
+  status: confirmed
+  table_id: 3.A4
+NJR_2025/ankle_sex_age:
+  confirmed_on: '2026-10-02'
+  located_on: '2026-10-02'
+  pages:
+  - 32
+  pdf: NJR 22nd Annual Report 2025_Ankles.pdf
+  sha256: 7c7ae3f2ed6df0de179c28d2cb2572556e6ede722db3e2d2e8fbf41062358b53
+  status: confirmed
+  table_id: 3.A3
+NJR_2025/elbow_brand:
+  confirmed_on: '2026-10-02'
+  located_on: '2026-10-02'
+  pages:
+  - 49
+  pdf: NJR 22nd Annual Report 2025_Elbows.pdf
+  sha256: bac2e8f4fe4ac15a6db14648301ac3e033feffc576775e210c6688084be03547
+  status: confirmed
+  table_id: 3.E8
+NJR_2025/elbow_indication_type:
+  confirmed_on: '2026-10-02'
+  located_on: '2026-10-02'
+  pages:
+  - 41
+  - 42
+  pdf: NJR 22nd Annual Report 2025_Elbows.pdf
+  sha256: bac2e8f4fe4ac15a6db14648301ac3e033feffc576775e210c6688084be03547
+  status: confirmed
+  table_id: 3.E6
 NJR_2025/knee_casemix_sex_age_design:
   confirmed_on: '2026-09-28'
   located_on: '2026-09-28'
