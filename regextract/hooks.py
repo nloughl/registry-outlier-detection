@@ -188,3 +188,180 @@ def lroi_period(rec: dict) -> None:
     rec["device_label"] = raw
     rec["row_type"] = "stratum"
 
+
+# ------------------------------------------------------------------------ rare joints (ankle, elbow)
+
+def _strip_marks(s: str | None) -> str | None:
+    """Drop trailing '*' (not used in the report year) and the AOANJRR HTARR footnote '1' glued to
+    'Hintermann Series H3' ('H31')."""
+    s = _clean(s)
+    if not s:
+        return s
+    s = re.sub(r"\s*\*+$", "", s)
+    s = re.sub(r"(Series H3)1$", r"\1", s)
+    s = re.sub(r"(?<=\w) 1(?= |$)", "", s)          # superscript footnote '1' read as a separate word
+    s = re.sub(r"-\s+", "-", s)                      # 'Buechel- Pappas' (wrapped) -> 'Buechel-Pappas'
+    return s
+
+
+def _summary_row(rec: dict, label: str) -> None:
+    if re.match(r"^TOTAL$", label or "", re.I):
+        rec["row_type"] = "total"
+    elif re.match(r"^Other \(\d+\)", label or "", re.I):
+        rec["row_type"] = "other"
+
+
+@hook("aoanjrr_elbow_stem")
+def aoanjrr_elbow_stem(rec: dict) -> None:
+    """AOANJRR ET6-ET8: one humeral stem per row (total elbow without radial replacement)."""
+    rec["humeral"] = _strip_marks(rec.get("humeral"))
+    rec["device_label"] = rec["humeral"] or ""
+    _summary_row(rec, rec["device_label"])
+
+
+@hook("aoanjrr_ankle_combo")
+def aoanjrr_ankle_combo(rec: dict) -> None:
+    """AOANJRR A15: tibial / talar prosthesis combination."""
+    if any(re.search(r"\*\s*$", rec.get(f) or "") for f in ("tibial", "talar")):
+        rec["flags"].append("not_used_in_report_year_*")
+    rec["tibial"], rec["talar"] = _strip_marks(rec.get("tibial")), _strip_marks(rec.get("talar"))
+    t, a = rec["tibial"], rec["talar"]
+    rec["device_label"] = t if (t and a and t.lower() == a.lower()) else " / ".join(p for p in (t, a) if p)
+    _summary_row(rec, rec["device_label"])
+
+
+def _period(raw: str | None) -> tuple[str | None, int | None, int | None]:
+    raw = _clean(raw) or ""
+    raw = re.sub(r"\s*[-\u2013\u2010\u00b7.]\s*", "-", raw)
+    m = re.match(r"^(\d{4})-(\d{4})$", raw)
+    if m:
+        return raw, int(m.group(1)), int(m.group(2))
+    m = re.match(r"^Pre (\d{4})$", raw, re.I)
+    if m:
+        return raw, None, int(m.group(1)) - 1
+    return raw or None, None, None
+
+
+@hook("stratum")
+def stratum(rec: dict) -> None:
+    """Generic case-mix stratum row: label columns named `implant_class`, `diagnosis`, `period`, `sex`, `age`
+    are copied to the matching case-mix fields; TOTAL / 'Other (n)' rows become summary rows."""
+    for f in ("implant_class", "diagnosis"):
+        if rec.get(f) is not None:
+            rec[f] = _clean(rec.get(f))
+    if rec.get("period") is not None:
+        rec["procedure_period"], rec["period_start"], rec["period_end"] = _period(rec.get("period"))
+    if rec.get("age") is not None:
+        rec["age_group"], rec["age_group_raw"] = std_age(rec.get("age")), _clean(rec.get("age"))
+    parts = [rec.get(f) for f in ("implant_class", "diagnosis", "procedure_period") if rec.get(f)]
+    rec["device_label"] = " | ".join(parts)
+    rec["row_type"] = "stratum"
+    first = _clean(rec.get("implant_class") or rec.get("diagnosis") or rec.get("period")) or ""
+    _summary_row(rec, first)
+    if rec["row_type"] == "total":
+        rec["device_label"] = "TOTAL"
+        rec["implant_class"] = rec["diagnosis"] = None
+
+
+@hook("njr_sex_age")
+def njr_sex_age(rec: dict) -> None:
+    """NJR 3.A3: 'All cases', then 'Female' / 'Male' sub-headings (carried by group_pattern) with age rows."""
+    lab = _clean(rec.get("age")) or ""
+    sex = rec.pop("design_group", None)
+    is_group = rec.pop("is_group_row", False)
+    rec.pop("design_subgroup", None)
+    if re.match(r"^All cases$", lab, re.I):
+        rec["row_type"], rec["device_label"] = "total", "All cases"
+    elif is_group:
+        rec["row_type"], rec["sex"], rec["device_label"] = "subtotal", lab.capitalize(), lab.capitalize()
+    else:
+        rec["row_type"], rec["sex"] = "stratum", (sex or "").capitalize() or None
+        rec["age_group"], rec["age_group_raw"] = std_age(lab), lab
+        rec["device_label"] = f"{rec['sex']} | {rec['age_group']}"
+
+
+ELBOW_CLASSES = [
+    (r"inc\.? radial head", "Total elbow inc. radial head"),
+    (r"total elbow", "Total elbow"),
+    (r"radial head", "Radial head"),
+    (r"distal humeral", "Distal humeral hemiarthroplasty"),
+    (r"lateral resurfacing", "Lateral resurfacing"),
+]
+
+
+def elbow_class(text: str | None) -> str | None:
+    t = (text or "").lower()
+    for pat, name in ELBOW_CLASSES:
+        if re.search(pat, t):
+            return name
+    return None
+
+
+@hook("njr_elbow_indication")
+def njr_elbow_indication(rec: dict) -> None:
+    """NJR 3.E6: rows by procedure type within 'All acute trauma cases' / 'All elective cases'.
+    The indication (acute trauma / elective) is stored in `diagnosis`; the procedure type in `implant_class`.
+    'Unconfirmed ...' rows (component labels do not match the reported procedure) are kept but flagged."""
+    lab = _clean(rec.get("label")) or ""
+    grp = rec.pop("design_group", None) or ""
+    is_group = rec.pop("is_group_row", False)
+    rec.pop("design_subgroup", None)
+    ind = "Acute trauma" if re.search(r"trauma", grp, re.I) else "Elective" if re.search(r"elective", grp, re.I) else None
+    if re.match(r"^All acute trauma and elective", lab, re.I):
+        rec["row_type"], rec["device_label"] = "total", "All acute trauma and elective cases"
+        return
+    rec["diagnosis"] = ind
+    if is_group:
+        rec["row_type"], rec["device_label"] = "subtotal", f"All {ind.lower()} cases" if ind else lab
+        return
+    rec["row_type"] = "stratum"
+    rec["implant_class"] = elbow_class(lab)
+    if re.match(r"^Unconfirmed", lab, re.I):
+        rec["implant_class"] = f"Unconfirmed {rec['implant_class'] or ''}".strip()
+        rec["flags"].append("unconfirmed_procedure_type")
+    rec["device_label"] = f"{ind} | {rec['implant_class']}"
+
+
+def _njr_tagged(raw: str, tags: dict[str, str]) -> tuple[str, dict[str, str | None]]:
+    """'Infinity[Tibial] Inbone[Talar]' -> ('Infinity / Inbone', {'tibial': 'Infinity', 'talar': 'Inbone'})."""
+    raw = re.sub(r"\s*\[\s*", "[", raw)
+    raw = re.sub(r"\s*\]\s*", "] ", raw).strip()
+    parts = re.findall(r"([^\[\]]+?)\[([^\]]+)\]", raw)
+    out = {v: None for v in tags.values()}
+    if not parts:
+        return raw, out
+    names = []
+    for name, tag in parts:
+        name = name.strip()
+        names.append(name)
+        for key, field in tags.items():
+            if key.lower() in tag.lower():
+                out[field] = name
+    return " / ".join(names), out
+
+
+@hook("njr_ankle_brand")
+def njr_ankle_brand(rec: dict) -> None:
+    raw = _clean(rec.get("brand")) or ""
+    label, comp = _njr_tagged(raw, {"Tibial": "tibial", "Talar": "talar"})
+    rec["device_label"] = label
+    rec["tibial"] = comp["tibial"] or label
+    rec["talar"] = comp["talar"] or label
+
+
+@hook("njr_elbow_brand")
+def njr_elbow_brand(rec: dict) -> None:
+    """NJR 3.E8: brand within a drawn group cell (total elbow / radial head / distal humeral hemi) and,
+    for total elbows, a linked / unlinked sub-cell."""
+    raw = _clean(rec.get("brand")) or ""
+    label, comp = _njr_tagged(raw, {"Hum": "humeral", "Ulna": "ulnar"})
+    rec["device_label"] = label
+    rec["humeral"] = comp["humeral"] or label
+    rec["ulnar"] = comp["ulnar"]
+    rec["implant_class"] = elbow_class(rec.get("group"))
+    sub = _clean(rec.get("subgroup")) or ""
+    rec["section"] = rec["implant_class"]
+    if re.search(r"unlinked", sub, re.I):
+        rec["constraint"] = "unlinked"
+    elif re.search(r"linked", sub, re.I):
+        rec["constraint"] = "linked"

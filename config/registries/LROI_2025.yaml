@@ -110,3 +110,141 @@ tables:
       column_edges: [66, 142, 226, 312, 406, 512, 618]
     expect:
       min_rows: 7                    # 2009-2010 ... 2021-2022
+
+  # ------------------------------------------------------------------ rare joints (image tables -> OCR + manual)
+  - key: ankle_overall
+    output: casemix
+    table_id: A014B
+    title: Cumulative revision percentage of primary ankle arthroplasties, 2014-2024 (n=1,460)
+    source: ocr_image
+    section_start: 'ankle arthroplasty In this section you will find'
+    section_end: 'revision arthroplasty In this section you will find'
+    locate_text: 'Long term revision Overall revision'
+    procedures:
+      ANKLE: {}
+    metric:
+      type: cumulative_revision_percentage
+      method: Kaplan-Meier cumulative revision percentage, percent
+      ci_level: 0.95
+      population: "All primary ankle arthroplasties 2014-2024 (n=1,460, from the caption); LROI notes ankle revisions are under-registered"
+    anchor: t1                         # no N column in this table
+    label_hook: stratum
+    columns:
+      - {name: implant_class, kind: label}
+      - {name: t1,  kind: est_ci, time: 1}
+      - {name: t3,  kind: est_ci, time: 3}
+      - {name: t5,  kind: est_ci, time: 5}
+      - {name: t7,  kind: est_ci, time: 7}
+      - {name: t10, kind: est_ci, time: 10}
+    row_types:
+      total: '^Primary ankle$'
+    end_patterns: ['^Please note']
+    ocr:
+      heading: 'Overall revision'      # first image below this heading (figure A014A + table A014B)
+      data_top: 372
+      column_edges: [116, 235, 352, 470, 588]
+    expect:
+      min_rows: 0                    # a single summary (total) row
+
+  - key: ankle_procedure_period
+    output: casemix
+    table_id: A015B
+    title: Cumulative revision percentage of primary TOTAL ankle arthroplasties for osteoarthritis by procedure period, 2014-2024
+    source: ocr_image
+    section_start: 'ankle arthroplasty In this section you will find'
+    section_end: 'revision arthroplasty In this section you will find'
+    locate_text: 'By procedure year'
+    procedures:
+      ANKLE: {}
+    metric:
+      type: cumulative_revision_percentage
+      method: Kaplan-Meier cumulative revision percentage, percent
+      ci_level: 0.95
+      population: "Primary total ankle arthroplasty for osteoarthritis, by 4-year procedure period"
+      not_reported_rule: "n.a. if <50 cases at risk"
+    anchor: n_total
+    label_hook: stratum
+    set_fields: {diagnosis: Osteoarthritis}
+    columns:
+      - {name: period,  kind: label}
+      - {name: n_total, kind: int}
+      - {name: t1,  kind: est_ci, time: 1}
+      - {name: t3,  kind: est_ci, time: 3}
+      - {name: t5,  kind: est_ci, time: 5}
+      - {name: t7,  kind: est_ci, time: 7}
+      - {name: t10, kind: est_ci, time: 10}
+    end_patterns: ['^Please note']
+    ocr:
+      heading: 'By procedure year'
+      data_top: 378
+      column_edges: [85, 170, 276, 382, 489, 604]
+    expect:
+      min_rows: 2
+
+  - key: elbow_overall
+    output: casemix
+    table_id: E016B
+    title: Cumulative revision percentage of primary elbow arthroplasties (all types), 2014-2024 (n=1,534)
+    source: ocr_image
+    section_start: 'Elbow arthroplasty Numbers'
+    section_end: 'Elbow revision arthroplasty In this section'
+    locate_text: 'Long term revision Overall'
+    procedures:
+      ELBOW: {}
+    metric:
+      type: cumulative_revision_percentage
+      method: Kaplan-Meier cumulative revision percentage, percent
+      ci_level: 0.95
+      population: "All primary elbow arthroplasties (total elbow, radial head, ...) 2014-2024 (n=1,534, from the caption)"
+    anchor: t1
+    label_hook: stratum
+    columns:
+      - {name: implant_class, kind: label}
+      - {name: t1,  kind: est_ci, time: 1}
+      - {name: t3,  kind: est_ci, time: 3}
+      - {name: t5,  kind: est_ci, time: 5}
+      - {name: t7,  kind: est_ci, time: 7}
+      - {name: t10, kind: est_ci, time: 10}
+    row_types:
+      total: '^Primary elbow$'
+    end_patterns: ['^Please note']
+    ocr:
+      heading: 'Overall'
+      data_top: 375
+      column_edges: [120, 230, 341, 460, 596]
+    expect:
+      min_rows: 0                    # a single summary (total) row
+
+  - key: elbow_type
+    output: casemix
+    table_id: E017B
+    title: Cumulative revision percentage of primary elbow arthroplasties by type (total elbow, radial head), 2014-2024
+    source: ocr_image
+    section_start: 'Elbow arthroplasty Numbers'
+    section_end: 'Elbow revision arthroplasty In this section'
+    locate_text: 'By type of elbow arthroplasty'
+    procedures:
+      ELBOW: {}
+    metric:
+      type: cumulative_revision_percentage
+      method: Kaplan-Meier cumulative revision percentage, percent
+      ci_level: 0.95
+      population: >-
+        Primary total elbow and radial head arthroplasty 2014-2024 (n=1,405 together). Per-type N is not printed;
+        the manual copy uses the registered counts from Table E001 (total elbow 816, radial head 599) - approximate.
+    anchor: t1
+    label_hook: stratum
+    columns:
+      - {name: implant_class, kind: label}
+      - {name: t1, kind: est_ci, time: 1}
+      - {name: t3, kind: est_ci, time: 3}
+      - {name: t5, kind: est_ci, time: 5}
+      - {name: t7, kind: est_ci, time: 7}
+      - {name: t9, kind: est_ci, time: 9}
+    end_patterns: ['^Please note']
+    ocr:
+      heading: 'By type of elbow arthroplasty'
+      data_top: 374
+      column_edges: [173, 273, 373, 488, 605]
+    expect:
+      min_rows: 2

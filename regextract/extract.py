@@ -55,6 +55,11 @@ def records_from_words(words: list[Word], spec: dict, page_no: int, page_height:
         min_top = spec.get("page_top_margin", 0)
     cols = make_columns(spec)
     cols, header_bottom = locate_columns(words, cols, min_top)
+    # columns printed without a header (NJR 3.E6 row labels): position fixed in the config
+    for name, (fx0, fx1) in (spec.get("fixed_columns") or {}).items():
+        for c in cols:
+            if c.name == name and not c.found:
+                c.found, c.x0, c.x1 = True, fx0, fx1
     missing = [c.name for c in cols if not c.found]
     diag["headers_missing"] = missing
     diag["headers_found"] = len(cols) - len(missing)
@@ -179,12 +184,47 @@ def extract_text_table(pdf_path: Path, cfg: dict, spec: dict, pages: list[int]) 
         for i, pno in enumerate(pages):
             page = pdf.pages[pno - 1]
             pw, ph = (page.height, page.width) if spec.get("text_rotation") == 90 else (page.width, page.height)
-            recs, diag, section = records_from_words(
-                words_for(page, spec), spec, pno, ph, pw, section, is_first=(i == 0))
+            words = words_for(page, spec)
+            recs, diag, section = records_from_words(words, spec, pno, ph, pw, section, is_first=(i == 0))
+            if spec.get("span_columns") and diag.get("_columns"):
+                apply_span_cells(page, words, recs, diag["_columns"], spec)
             diag.pop("_columns", None)
             diags.append(diag)
             all_recs.extend(recs)
     return to_wide(all_recs, spec, cfg, pdf_path.name), diags
+
+
+def _cell_rects(page, spec: dict) -> list[tuple[float, float, float, float]]:
+    """Filled table-cell rectangles as (x0, x1, top, bottom) in the same coordinates as the words
+    (rotated back to upright for `text_rotation: 90`, as words.rotated_words does)."""
+    H = page.height
+    out = []
+    for r in page.rects:
+        if spec.get("text_rotation") == 90:
+            out.append((H - r["bottom"], H - r["top"], r["x0"], r["x1"]))
+        else:
+            out.append((r["x0"], r["x1"], r["top"], r["bottom"]))
+    return out
+
+
+def apply_span_cells(page, words, recs, cols, spec: dict) -> None:
+    """Label columns whose cells span several rows (NJR 3.E8: 'Total elbow replacement brands' is
+    printed once, in a cell drawn around all of that group's rows). The text inside each drawn cell
+    is given to every record whose anchor lies inside the cell, replacing what segmentation assigned."""
+    for name in spec["span_columns"]:
+        col = next((c for c in cols if c.name == name), None)
+        if col is None:
+            continue
+        xc, width = (col.x0 + col.x1) / 2, max(col.x1 - col.x0, 1)
+        for x0, x1, top, bottom in _cell_rects(page, spec):
+            if not (x0 - 1 <= xc <= x1 + 1) or bottom - top < 8 or x1 - x0 > 3 * width:
+                continue
+            inside = [w for w in words if x0 - 1 <= w.xc <= x1 + 1 and top - 1 <= w.yc <= bottom + 1]
+            if not inside:
+                continue
+            for r in recs:
+                if top <= r.anchor_y <= bottom:
+                    r.cells[name] = sorted(inside, key=lambda w: (round(w.yc), w.x0))
 
 
 # ---------------------------------------------------------------------------- image tables (OCR)
@@ -227,6 +267,9 @@ def rows_from_manual(path: Path, cfg: dict, spec: dict, pdf_name: str, page: int
                     e, l, u = (num(m.get(f"{c['name']}_{s}")) for s in ("est", "lcl", "ucl"))
                     row[c["name"]] = {"estimate": e, "lcl": l, "ucl": u, "n_at_risk": None, "italic": False,
                                       "status": "ok" if e is not None else "not_reported", "raw": ""}
+            # tables without an N column (LROI overall figures): N may be filled in by hand, e.g. from the caption
+            if "n_total" not in row and (m.get("n_total") or "").strip():
+                row["n_total"] = int(float(m["n_total"]))
             if (m.get("n_total_marked") or "0").strip() in ("1", "TRUE", "true", "yes"):
                 row["flags"].append("n_total:marked_*")
             if (m.get("note") or "").strip():

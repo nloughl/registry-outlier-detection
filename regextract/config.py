@@ -31,10 +31,13 @@ def load_registry_configs(registries: list[str] | None = None, year: int | None 
     if year:
         cfgs = [c for c in cfgs if c["report_year"] == year]
     else:
+        # latest report year per registry AND document: a registry can have several PDFs per year
+        # (main report + supplements, e.g. AOANJRR ankle / elbow), told apart by `document` in the config
         latest = {}
         for c in cfgs:
-            if c["registry"] not in latest or c["report_year"] > latest[c["registry"]]["report_year"]:
-                latest[c["registry"]] = c
+            k = (c["registry"], c.get("document", "main"))
+            if k not in latest or c["report_year"] > latest[k]["report_year"]:
+                latest[k] = c
         cfgs = list(latest.values())
     return cfgs
 
