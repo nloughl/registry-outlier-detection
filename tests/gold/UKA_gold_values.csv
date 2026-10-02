@@ -1,0 +1,18 @@
+registry,report_year,table_key,device_label,time_yr,estimate,lcl,ucl,n_total,source_of_gold
+AOANJRR,2025,uka_prosthesis_combination,Oxford (ctd) / Oxford (ctd),20,30.3,29.3,31.5,13753,earlier manual extraction AOANJRR_UKA_2025 (Table KP17)
+AOANJRR,2025,uka_prosthesis_combination,BalanSys Uni / BalanSys Uni Fixed,15,13.5,10.1,17.8,1435,earlier manual extraction AOANJRR_UKA_2025 (Table KP17)
+AOANJRR,2025,uka_prosthesis_combination,Restoris MCK / Restoris MCK,5,4.1,3.4,4.9,6792,earlier manual extraction AOANJRR_UKA_2025 (Table KP17)
+AOANJRR,2025,uka_prosthesis_combination,Other (5),5,8.1,5.1,12.7,271,earlier manual extraction AOANJRR_UKA_2025 (Table KP17)
+AOANJRR,2025,uka_prosthesis_combination,Oxford (cless) / Oxford (ctd),10,14.4,11.1,18.4,550,PDF p428 - femoral filled down from row above
+NJR,2025,uka_brand,Preservation[M.Fem:M.Tib],20,28.83,25.82,32.11,1419,earlier manual extraction NJR_UKA_2025 (Table 3.K8)
+NJR,2025,uka_brand,Oxford Single Peg Cemented Partial Knee[M.Fem]Oxford Partial Knee[M.Tib],15,16.63,16.21,17.06,41997,earlier manual extraction NJR_UKA_2025 (Table 3.K8)
+NJR,2025,uka_brand,All unicompartmental knee replacements,1,0.92,0.88,0.96,206689,earlier manual extraction NJR_UKA_2025 (Table 3.K8)
+NJR,2025,uka_brand,Physica ZUK[M.Fem:M.Tib],10,5.14,4.76,5.54,35163,earlier manual extraction NJR_UKA_2025 (Table 3.K8)
+NJR,2025,uka_brand,Triathlon Uni[M.Fem] Triathlon[M.Tib],15,14.66,10.50,20.26,2290,earlier manual extraction NJR_UKA_2025 (Table 3.K8)
+SIRIS,2025,uka_system,Journey uni,12,25.6,22.1,29.5,1128,earlier manual extraction SIRIS_UKA_2025 (Table 5.15)
+SIRIS,2025,uka_system,Other systems,12,19.7,16.3,23.7,1436,earlier manual extraction SIRIS_UKA_2025 (Table 5.15)
+SIRIS,2025,uka_system,Allegretto,1,0.5,0.2,1.1,1074,earlier manual extraction SIRIS_UKA_2025 (Table 5.15)
+SIRIS,2025,uka_system,Sigma partial knee,10,9.7,8.6,10.9,6013,earlier manual extraction SIRIS_UKA_2025 (Table 5.15)
+EPRD,2024,knee_femorotibial_combination,UNIVATION / UNIVATION,5,13.3,11.5,15.0,1601,PDF p75 (2024 report Table 52)
+EPRD,2024,knee_femorotibial_combination,Oxford TiNbN / Oxford Tibia TiNbN,1,3.0,2.3,3.6,2492,PDF p75 (2024 report Table 52)
+LROI,2025,uka_cemented_component,OXFORD PKR Cemented / OXFORD PKR Cemented,16,19.89,18.78,21.01,16206,image K054 read at 5x zoom

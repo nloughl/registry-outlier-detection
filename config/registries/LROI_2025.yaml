@@ -1,0 +1,112 @@
+registry: LROI
+country: Netherlands
+report_year: 2025
+data_period: "2007 to 2024-12-31"
+pdf_glob: "*lroi-report-2025*.pdf"
+notes: >
+  The online LROI report prints its tables as images, and LROI does not offer the underlying
+  data for download. These tables go through OCR (Tesseract) followed by a manual verification
+  step: OCR output is written to review/, and a verified copy in manual/ is what the pipeline uses.
+
+_lroi_columns: &lroi_columns
+  - {name: femoral,  kind: label}
+  - {name: tibial,   kind: label}
+  - {name: n_total,  kind: int}          # Primary UKAs (n)
+  - {name: hospitals, kind: int}
+  - {name: age,      kind: median_iqr}   # Median (IQR) age (yr)
+  - {name: n_revised, kind: int}         # Revisions (n)
+  - {name: rev_total_revision, kind: int}     # Type of revision (n): total revision
+  - {name: rev_patella_addition, kind: int}
+  - {name: rev_only_femur, kind: int}
+  - {name: rev_only_tibia, kind: int}
+  - {name: rev_only_insert_patella, kind: int}
+  - {name: rev_unknown, kind: int}
+  - {name: t1,  kind: est_ci, time: 1}
+  - {name: t3,  kind: est_ci, time: 3}
+  - {name: t5,  kind: est_ci, time: 5}
+  - {name: t7,  kind: est_ci, time: 7}
+  - {name: t10, kind: est_ci, time: 10}
+  - {name: t16, kind: est_ci, time: 16}
+
+_lroi_common: &lroi_common
+  source: ocr_image
+  # both the TKA and the UKA chapters contain 'By cemented component name': search the UKA chapter only
+  section_start: 'Unicondylar knee arthroplasty In this section you will find'
+  section_end: 'In this section you will find'
+  procedures:
+    UKA:
+      keep_row_types: [total]
+  metric:
+    type: cumulative_revision_percentage
+    method: Kaplan-Meier cumulative revision percentage, percent
+    ci_level: 0.95
+    population: "UKA for osteoarthritis 2007-2024; combinations with >100 procedures reported by >=3 hospitals"
+    not_reported_rule: "n.a. if <50 cases at risk"
+  anchor: n_total
+  label_hook: lroi_combination
+  columns: *lroi_columns
+  end_patterns: ['Denotes', '^Please note']
+  row_types:
+    total: '^All (un)?cemented UKAs'
+  checks:
+    revision_type_sum: [rev_total_revision, rev_patella_addition, rev_only_femur, rev_only_tibia, rev_only_insert_patella, rev_unknown]
+
+tables:
+  - <<: *lroi_common
+    key: uka_cemented_component
+    table_id: K054
+    title: Cumulative revision percentages of primary cemented UKA by prosthesis component combination (OA, 2007-2024)
+    locate_text: 'By cemented component name'
+    ocr:
+      heading: 'By cemented component name'   # the table image is the first image below this heading
+      data_top: 88                             # native-pixel y where the data rows start
+      column_edges: [130, 222, 285, 335, 410, 460, 515, 565, 615, 660, 718, 765, 826, 890, 955, 1021, 1088]
+    expect:
+      min_rows: 9
+
+  - <<: *lroi_common
+    key: uka_uncemented_component
+    table_id: K055
+    title: Cumulative revision percentages of primary uncemented UKA by prosthesis component combination (OA, 2007-2024)
+    locate_text: 'By uncemented component'
+    ocr:
+      heading: 'By uncemented component'
+      data_top: 86
+      column_edges: [140, 235, 300, 350, 428, 480, 535, 588, 636, 685, 742, 786, 846, 905, 962, 1020, 1080]
+    expect:
+      min_rows: 1        # only one uncemented combination meets LROI's listing threshold
+
+  - key: uka_procedure_period
+    output: casemix              # written to outputs/<PROC>/<PROC>_casemix_long.csv (procedure_period column)
+    table_id: K052B
+    title: Cumulative major revision percentage of UKA for osteoarthritis by procedure year of primary UKA (2009-2024)
+    source: ocr_image
+    section_start: 'Unicondylar knee arthroplasty In this section you will find'
+    section_end: 'In this section you will find'
+    locate_text: 'By procedure year'
+    procedures:
+      UKA: {}
+    metric:
+      type: cumulative_major_revision_percentage
+      method: Kaplan-Meier cumulative MAJOR revision percentage (first revision of femur or tibia), percent
+      ci_level: 0.95
+      population: "All primary UKA for osteoarthritis in the Netherlands, by 2-year procedure period, 2009-2022"
+      not_reported_rule: "n.a. if <50 cases at risk"
+    anchor: n_total
+    label_hook: lroi_period
+    columns:
+      - {name: period,  kind: label}
+      - {name: n_total, kind: int}
+      - {name: t1,  kind: est_ci, time: 1}
+      - {name: t3,  kind: est_ci, time: 3}
+      - {name: t5,  kind: est_ci, time: 5}
+      - {name: t7,  kind: est_ci, time: 7}
+      - {name: t10, kind: est_ci, time: 10}
+      - {name: t15, kind: est_ci, time: 15}
+    end_patterns: ['^Please note', 'Major revision']
+    ocr:
+      heading: 'By procedure year'   # chart and table are one image: data rows sit below the chart
+      data_top: 372                  # native-pixel y just below the table header (Number (n), 1yr ...)
+      column_edges: [66, 142, 226, 312, 406, 512, 618]
+    expect:
+      min_rows: 7                    # 2009-2010 ... 2021-2022
