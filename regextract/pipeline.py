@@ -8,7 +8,7 @@ from pathlib import Path
 from . import config as C
 from .extract import extract_ocr_table, extract_text_table
 from .locate import load_page_map, locate_table, page_texts, propose, save_page_map, sha256
-from .normalise import DEVICE_COLUMNS, LONG_COLUMNS, keep_for_procedure, to_long
+from .normalise import CASEMIX_COLUMNS, DEVICE_COLUMNS, LONG_COLUMNS, keep_for_procedure, to_long
 from .validate import validate_table
 
 
@@ -90,12 +90,16 @@ def cmd_confirm(refs: list[str] | None, log=print) -> None:
 # --------------------------------------------------------------------------------------- extract
 
 def cmd_extract(procedure: str, registries: list[str] | None, year: int | None, auto_confirm: bool = False,
-                xlsx: bool = False, run_ocr: bool = True, log=print) -> dict:
+                xlsx: bool = False, run_ocr: bool = True, outputs: list[str] | None = None, log=print) -> dict:
+    """outputs: which table kinds to (re)build - 'device' (implant tables) and/or 'casemix'. Default both."""
     pm = load_page_map()
     out_dir = C.OUT_DIR / procedure
-    all_long, all_dev, issues, extraction_log = [], [], [], []
+    kinds = outputs or ["device", "casemix"]
+    all_long, all_dev, all_cm, issues, extraction_log = [], [], [], [], []
     for cfg in C.load_registry_configs(registries, year):
         for spec in C.tables_for(cfg, procedure):
+            if spec.get("output", "device") not in kinds:
+                continue
             ref = C.table_ref(cfg, spec)
             entry = pm.get(ref)
             try:
@@ -122,6 +126,9 @@ def cmd_extract(procedure: str, registries: list[str] | None, year: int | None, 
             iss = validate_table(rows, diags, cfg, spec)
             issues += iss
             long = to_long(rows, cfg, spec, procedure)
+            if spec.get("output", "device") == "casemix":
+                all_cm += long
+                long = []
             all_long += long
             seen = set()
             for lr in long:
@@ -136,21 +143,25 @@ def cmd_extract(procedure: str, registries: list[str] | None, year: int | None, 
             src = {r.get("source") for r in rows}
             log(f"[ok] {ref}: {len(rows)} rows from pages {entry['pages']} ({', '.join(sorted(map(str, src)))}); "
                 f"{n_err} errors, {n_warn} warnings")
-    _write_csv(out_dir / f"{procedure}_long.csv", all_long, LONG_COLUMNS)
-    _write_csv(out_dir / f"{procedure}_devices.csv", all_dev, DEVICE_COLUMNS)
+    if "device" in kinds:
+        _write_csv(out_dir / f"{procedure}_long.csv", all_long, LONG_COLUMNS)
+        _write_csv(out_dir / f"{procedure}_devices.csv", all_dev, DEVICE_COLUMNS)
+    if "casemix" in kinds:
+        _write_csv(out_dir / f"{procedure}_casemix_long.csv", all_cm, CASEMIX_COLUMNS)
     _write_csv(out_dir / "validation_report.csv", issues,
                ["registry", "report_year", "table_key", "severity", "check", "device_label", "time_yr", "detail"])
     _write_csv(out_dir / "extraction_log.csv", extraction_log)
     if xlsx:
         write_xlsx(out_dir, procedure)
-    return {"long": all_long, "devices": all_dev, "issues": issues}
+    return {"long": all_long, "devices": all_dev, "casemix": all_cm, "issues": issues}
 
 
 def write_xlsx(out_dir: Path, procedure: str) -> Path:
     import pandas as pd
     path = out_dir / f"{procedure}_extraction.xlsx"
     with pd.ExcelWriter(path, engine="openpyxl") as xw:
-        for name in (f"{procedure}_long", f"{procedure}_devices", "validation_report", "extraction_log"):
+        for name in (f"{procedure}_long", f"{procedure}_devices", f"{procedure}_casemix_long",
+                     "validation_report", "extraction_log"):
             f = out_dir / f"{name}.csv"
             if f.exists() and f.stat().st_size > 0:
                 pd.read_csv(f).to_excel(xw, sheet_name=name[:31], index=False)

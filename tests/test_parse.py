@@ -27,3 +27,18 @@ def test_ocr_repair_restores_decimals():
     r = repair_est_ci("1245(11.95- 1294)")
     assert (r["estimate"], r["lcl"], r["ucl"]) == (12.45, 11.95, 12.94)
     assert repair_est_ci("na.")["status"] == "not_reported"
+
+
+def test_suppressed_count_and_age_labels():
+    from regextract.hooks import std_age
+    assert parse_int("<4") == (None, ["suppressed<4"])
+    assert [std_age(a) for a in ("<55", "55 to 64", "55-64", "≥75")] == ["<55", "55-64", "55-64", ">=75"]
+
+
+def test_nth_header_occurrence():
+    from regextract.grid import find_phrase
+    from regextract.words import Word
+    line = [Word("N", 10, 15, 0, 8), Word("1", 20, 24, 0, 8), Word("year", 25, 40, 0, 8),
+            Word("N", 110, 115, 0, 8), Word("1", 120, 124, 0, 8), Word("year", 125, 140, 0, 8)]
+    assert find_phrase([line], "1 year#2")[0] == 120
+    assert find_phrase([line], "N#2")[0] == 110

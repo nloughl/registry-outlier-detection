@@ -68,3 +68,52 @@ def page_words(page: "pdfplumber.page.Page") -> list[Word]:
 
 def page_text(page: "pdfplumber.page.Page") -> str:
     return normalise_space(page.extract_text() or "")
+
+
+def rotated_words(page: "pdfplumber.page.Page", gap: float = 1.5) -> list[Word]:
+    """Words from text rotated 90 degrees (reading bottom-to-top, e.g. landscape tables on portrait
+    pages), rotated back into upright coordinates: x = distance from the page bottom, y = page x."""
+    H = page.height
+    chars = []
+    for c in page.chars:
+        a, b, cc, d = c["matrix"][:4]
+        if abs(a) < 1e-3 and b > 0:  # 90 deg counter-clockwise text
+            chars.append({"text": c["text"], "x0": H - c["bottom"], "x1": H - c["top"],
+                          "top": c["x0"], "bottom": c["x1"], "font": (c.get("fontname") or "").lower()})
+    chars.sort(key=lambda c: ((c["top"] + c["bottom"]) / 2, c["x0"]))
+    lines: list[list[dict]] = []
+    for c in chars:
+        yc = (c["top"] + c["bottom"]) / 2
+        if lines and abs((lines[-1][0]["top"] + lines[-1][0]["bottom"]) / 2 - yc) <= 2:
+            lines[-1].append(c)
+        else:
+            lines.append([c])
+    out = []
+    for line in lines:
+        line.sort(key=lambda c: c["x0"])
+        cur: list[dict] = []
+
+        def flush():
+            if cur:
+                font = cur[0]["font"]
+                out.append(Word(text="".join(ch["text"] for ch in cur), x0=cur[0]["x0"], x1=cur[-1]["x1"],
+                                top=min(ch["top"] for ch in cur), bottom=max(ch["bottom"] for ch in cur),
+                                italic=("italic" in font) or bool(re.search(r"(?:-|\b)(?:\w*it|oblique)$", font)),
+                                bold=("bold" in font) or font.endswith("-md")))
+        for ch in line:
+            if ch["text"].isspace():
+                flush()
+                cur = []
+                continue
+            if cur and ch["x0"] - cur[-1]["x1"] > gap:
+                flush()
+                cur = []
+            cur.append(ch)
+        flush()
+    return out
+
+
+def words_for(page: "pdfplumber.page.Page", spec: dict | None = None) -> list[Word]:
+    if spec and spec.get("text_rotation") == 90:
+        return rotated_words(page)
+    return page_words(page)

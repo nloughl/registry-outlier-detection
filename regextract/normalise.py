@@ -7,7 +7,7 @@ LONG_COLUMNS = [
     "registry", "country", "report_year", "data_period", "table_key", "table_id", "procedure",
     "pdf_file", "pdf_page", "source", "verification",
     "section", "row_type", "device_label", "femoral", "tibial", "manufacturer_femoral",
-    "manufacturer_tibial", "compartment", "patella",
+    "manufacturer_tibial", "compartment", "patella", 
     "n_total", "n_revised", "hospitals", "age_median", "age_q1", "age_q3", "mean_age", "male_pct", "ccs",
     "years_implanted",
     "time_yr", "estimate", "lcl", "ucl", "n_at_risk", "value_status", "low_at_risk",
@@ -17,22 +17,60 @@ LONG_COLUMNS = [
 DEVICE_COLUMNS = [c for c in LONG_COLUMNS if c not in
                   ("time_yr", "estimate", "lcl", "ucl", "n_at_risk", "value_status", "low_at_risk")]
 
+# case-mix tables (sex / age / design strata rather than devices)
+CASEMIX_COLUMNS = [
+    "registry", "country", "report_year", "data_period", "table_key", "table_id", "procedure",
+    "pdf_file", "pdf_page", "source", "verification",
+    "row_type", "stratum_label", "design_group", "design_subgroup", "implant_class", "fixation",
+    "compartment", "constraint", "bearing", "sex", "age_group", "age_group_raw",
+    "procedure_period", "period_start", "period_end",
+    "n_total", "n_revised",
+    "time_yr", "estimate", "lcl", "ucl", "n_at_risk", "value_status", "low_at_risk",
+    "metric_type", "metric_method", "ci_level", "population", "row_flags",
+]
+
+COLUMNS_BY_OUTPUT = {"device": LONG_COLUMNS, "casemix": CASEMIX_COLUMNS}
+
+
+def expand_strata(rows: list[dict], spec: dict) -> list[tuple[dict, list[dict]]]:
+    """Split rows whose strata sit side by side (NJR 3.K6: male | female) into one view per stratum.
+
+    Returns [(row_view, time_columns)] where time_columns are column specs (with 'time') whose parsed
+    values live in row_view[col['name']]. Tables without `strata` give one view per row."""
+    tcols = [c for c in spec["columns"] if c.get("kind") == "est_ci"]
+    strata = spec.get("strata")
+    if not strata:
+        return [(r, tcols) for r in rows]
+    out = []
+    for r in rows:
+        for st in strata:
+            sfx = st["suffix"]
+            v = dict(r)
+            v["sex"] = st.get("sex", v.get("sex"))
+            for base in ("n_total", "n_revised"):
+                v[base] = r.get(base + sfx)
+            v["flags"] = [f for f in r.get("flags", []) if not re.match(r"^\w+_[mf]:", f) or f.split(":")[0].endswith(sfx)]
+            out.append((v, [c for c in tcols if c["name"].endswith(sfx)]))
+    return out
+
 
 def keep_for_procedure(row: dict, spec: dict, procedure: str) -> bool:
     """Row filter for tables that mix procedures (e.g. EPRD lists TKA and UKA in one table)."""
     rule = (spec.get("procedures") or {}).get(procedure) or {}
     if row["row_type"] in rule.get("keep_row_types", []):
         return True
-    secs = rule.get("sections")
-    if not secs:
-        return True
-    return any(re.search(p, row.get("section") or "", re.I) for p in secs)
+    secs, groups = rule.get("sections"), rule.get("groups")
+    if secs and not any(re.search(p, row.get("section") or "", re.I) for p in secs):
+        return False
+    if groups and not any(re.search(p, row.get("design_group") or "", re.I) for p in groups):
+        return False
+    return True
 
 
 def to_long(rows: list[dict], cfg: dict, spec: dict, procedure: str) -> list[dict]:
     metric = spec.get("metric", {})
     out = []
-    for r in rows:
+    for r, tcols in expand_strata(rows, spec):
         base = {
             "registry": r["registry"], "country": cfg.get("country"), "report_year": r["report_year"],
             "data_period": cfg.get("data_period"), "table_key": r["table_key"], "table_id": r["table_id"],
@@ -51,10 +89,15 @@ def to_long(rows: list[dict], cfg: dict, spec: dict, procedure: str) -> list[dic
             "metric_type": metric.get("type"), "metric_method": metric.get("method"),
             "ci_level": metric.get("ci_level"), "population": metric.get("population"),
             "row_flags": ";".join(r.get("flags", [])),
+            # case-mix fields
+            "stratum_label": r.get("device_label"), "design_group": r.get("design_group"),
+            "design_subgroup": r.get("design_subgroup"), "implant_class": r.get("implant_class"),
+            "fixation": r.get("fixation"), "constraint": r.get("constraint"), "bearing": r.get("bearing"),
+            "sex": r.get("sex"), "age_group": r.get("age_group"), "age_group_raw": r.get("age_group_raw"),
+            "procedure_period": r.get("procedure_period"), "period_start": r.get("period_start"),
+            "period_end": r.get("period_end"),
         }
-        for c in spec["columns"]:
-            if c.get("kind") != "est_ci":
-                continue
+        for c in tcols:
             p = r.get(c["name"]) or {}
             out.append({**base, "time_yr": c["time"], "estimate": p.get("estimate"), "lcl": p.get("lcl"),
                         "ucl": p.get("ucl"), "n_at_risk": p.get("n_at_risk"), "value_status": p.get("status"),

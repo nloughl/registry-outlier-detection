@@ -33,3 +33,32 @@ def test_gold_values():
                 wrong.append((g["device_label"], g["time_yr"], k, r[k], g[k]))
     assert not missing, f"gold rows not found: {missing}"
     assert not wrong, f"mismatches: {wrong}"
+
+
+CM_GOLD = ROOT / "tests" / "gold" / "UKA_casemix_gold_values.csv"
+CM_LONG = OUT_DIR / "UKA" / "UKA_casemix_long.csv"
+
+
+@pytest.mark.skipif(not CM_LONG.exists(), reason="run the pipeline first")
+def test_casemix_gold_values():
+    with open(CM_LONG, newline="", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    with open(CM_GOLD, newline="", encoding="utf-8") as f:
+        gold = list(csv.DictReader(f))
+    missing, wrong = [], []
+    for g in gold:
+        hits = [r for r in rows if r["registry"] == g["registry"] and r["table_key"] == g["table_key"]
+                and r["stratum_label"] == g["stratum_label"] and r["sex"] == g["sex"]
+                and r["age_group"] == g["age_group"] and float(r["time_yr"]) == float(g["time_yr"])]
+        if not hits:
+            missing.append((g["stratum_label"], g["sex"], g["age_group"]))
+            continue
+        r = hits[0]
+        if int(float(r["n_total"])) != int(g["n_total"]):
+            wrong.append((g["stratum_label"], "n_total", r["n_total"], g["n_total"]))
+        for k in ("estimate", "lcl", "ucl"):
+            if abs(float(r[k]) - float(g[k])) > 1e-9:
+                wrong.append((g["stratum_label"], g["sex"], g["age_group"], g["time_yr"], k, r[k], g[k]))
+    assert not missing, f"gold rows not found: {missing}"
+    assert not wrong, f"mismatches: {wrong}"
+

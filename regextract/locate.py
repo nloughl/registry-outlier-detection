@@ -22,7 +22,7 @@ import yaml
 
 from .config import PAGE_MAP, make_columns, table_ref
 from .grid import locate_columns
-from .words import normalise_space, page_words
+from .words import normalise_space, words_for
 
 TOC_RE = re.compile(r"(?:\.\s?){6,}\s*\d+")
 
@@ -49,7 +49,7 @@ def _pat(p: str | None):
 
 def header_score(page, spec: dict) -> tuple[float, list[str]]:
     cols = make_columns(spec)
-    cols, _ = locate_columns(page_words(page), cols)
+    cols, _ = locate_columns(words_for(page, spec), cols)
     missing = [c.name for c in cols if not c.found]
     return 1 - len(missing) / len(cols), missing
 

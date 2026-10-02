@@ -11,7 +11,7 @@ from .config import make_columns
 from .grid import (build_records, cluster_lines, join_words, locate_columns, refine_label_bounds,
                    refine_label_numeric_bounds, set_bounds)
 from .parse import parse_est_ci, parse_int, parse_median_iqr, parse_number, parse_ratio
-from .words import Word, normalise_space, page_words
+from .words import Word, normalise_space, page_words, words_for
 
 
 def _caption_box(words: list[Word], pattern: str | None, min_top: float = -1) -> tuple[float, float] | None:
@@ -150,6 +150,19 @@ def to_wide(recs, spec: dict, cfg: dict, pdf_name: str) -> list[dict]:
                 row[f] = last
                 row["flags"].append(f"{f}_filled_down")
 
+    # hierarchical row labels (NJR 3.K6: 'All unicondylar, cemented' followed by 'medial, fixed', ...)
+    gp = spec.get("group_pattern")
+    if gp:
+        col = spec.get("group_label_column") or next(c["name"] for c in spec["columns"] if c.get("kind") == "label")
+        cur = None
+        for row in out:
+            lab = row.get(col) or ""
+            if re.search(gp, lab):
+                cur = lab
+                row["design_group"], row["design_subgroup"], row["is_group_row"] = lab, None, True
+            else:
+                row["design_group"], row["design_subgroup"], row["is_group_row"] = cur, lab or None, False
+
     hook = hooks.HOOKS[spec["label_hook"]]
     for row in out:
         hook(row)
@@ -165,8 +178,9 @@ def extract_text_table(pdf_path: Path, cfg: dict, spec: dict, pages: list[int]) 
     with pdfplumber.open(pdf_path) as pdf:
         for i, pno in enumerate(pages):
             page = pdf.pages[pno - 1]
+            pw, ph = (page.height, page.width) if spec.get("text_rotation") == 90 else (page.width, page.height)
             recs, diag, section = records_from_words(
-                page_words(page), spec, pno, page.height, page.width, section, is_first=(i == 0))
+                words_for(page, spec), spec, pno, ph, pw, section, is_first=(i == 0))
             diag.pop("_columns", None)
             diags.append(diag)
             all_recs.extend(recs)
@@ -201,7 +215,9 @@ def rows_from_manual(path: Path, cfg: dict, spec: dict, pdf_name: str, page: int
                    "tibial": (m.get("tibial") or "").strip() or None}
             for c in spec["columns"]:
                 k = c.get("kind")
-                if k == "int":
+                if k == "label":
+                    row[c["name"]] = (m.get(c["name"]) or "").strip() or None
+                elif k == "int":
                     v = num(m.get(c["name"]))
                     row[c["name"]] = int(v) if v is not None else None
                 elif k == "median_iqr":
@@ -228,9 +244,10 @@ def rows_from_manual(path: Path, cfg: dict, spec: dict, pdf_name: str, page: int
 def ocr_rows_to_manual_csv(rows: list[dict], spec: dict, path: Path) -> None:
     """Write OCR output in the manual/ CSV layout, so it can be corrected and saved as the verified copy."""
     import csv
-    fields = ["femoral", "tibial", "n_total", "n_total_marked"]
+    labels = [c["name"] for c in spec["columns"] if c.get("kind") == "label"]
+    fields = labels + ["n_total", "n_total_marked"]
     for c in spec["columns"]:
-        if c["name"] in ("femoral", "tibial", "n_total"):
+        if c["name"] in labels or c["name"] == "n_total":
             continue
         if c.get("kind") == "median_iqr":
             fields += [f"{c['name']}_median", f"{c['name']}_q1", f"{c['name']}_q3"]

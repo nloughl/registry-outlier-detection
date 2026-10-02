@@ -32,6 +32,8 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("--xlsx", action="store_true", help="also write an Excel workbook")
         p.add_argument("--no-ocr", action="store_true", help="skip OCR (use manual/ copies only)")
         p.add_argument("--auto-confirm", action="store_true", help="use proposed pages without confirming")
+        p.add_argument("--outputs", nargs="*", choices=["device", "casemix"],
+                       help="table kinds to build (default: both)")
 
     a = ap.parse_args(argv)
     if a.cmd == "locate":
@@ -44,9 +46,10 @@ def main(argv: list[str] | None = None) -> int:
         if a.cmd == "run":
             pipeline.cmd_locate(a.procedure, a.registries, a.year)
         res = pipeline.cmd_extract(a.procedure, a.registries, a.year, auto_confirm=a.auto_confirm,
-                                   xlsx=a.xlsx, run_ocr=not a.no_ocr)
+                                   xlsx=a.xlsx, run_ocr=not a.no_ocr, outputs=a.outputs)
         n_err = sum(i["severity"] == "error" for i in res["issues"])
-        print(f"\n{len(res['long'])} long rows, {len(res['devices'])} device rows -> outputs/{a.procedure}/")
+        print(f"\n{len(res['long'])} device long rows ({len(res['devices'])} devices), "
+              f"{len(res['casemix'])} case-mix long rows -> outputs/{a.procedure}/")
         print(f"validation: {n_err} errors (see outputs/{a.procedure}/validation_report.csv)")
         return 1 if n_err else 0
     return 0

@@ -30,6 +30,8 @@ def parse_int(s: str) -> tuple[int | None, list[str]]:
         flags.append("marked_*")
     s = re.sub(r"[*†\s]", "", s)
     s = s.replace(",", "")
+    if s.startswith("<"):  # suppressed small count, e.g. NJR '<4'
+        return None, flags + [f"suppressed{s}"]
     if not s or NA_RE.match(s):
         return None, flags
     m = re.match(r"^\d+(?:\.\d+)?$", s)
