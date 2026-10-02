@@ -1,0 +1,39 @@
+registry: SIRIS
+country: Switzerland
+report_year: 2025
+data_period: "2012-09-01 to 2024-12-31"
+pdf_glob: "*SIRIS*2025*.pdf"
+
+tables:
+  - key: uka_system
+    table_id: "5.15"
+    title: "Long term evaluation: Failure rates of primary partial knee arthroplasty systems (all diagnoses, all component fixations)"
+    procedures:
+      UKA:
+        keep_row_types: [average, other]
+    caption: '^Table 5\.15'
+    caption_position: below        # SIRIS prints captions underneath tables
+    metric:
+      type: failure_rate
+      method: Kaplan-Meier cumulative failure (revision) rate, percent
+      ci_level: 0.95
+      population: "Primary partial knee arthroplasty systems, all diagnoses, all fixations, 2012-2024"
+      notes: "CCS = share of implants from the main user hospital (%); >=50 suggests results driven by one hospital"
+    anchor: t1                     # 'CH average' row has no N, so anchor on the 1-year estimate
+    label_hook: siris_system
+    columns:
+      - {name: system,  header: ["System"], kind: label, align: left}
+      - {name: n_total, header: ["Total"],  kind: int}
+      - {name: ccs,     header: ["CCS"],    kind: number}
+      - {name: mean_age, header: ["Mean"],  kind: number}
+      - {name: t1,  header: ["1 year"],   kind: est_ci, time: 1}
+      - {name: t3,  header: ["3 years"],  kind: est_ci, time: 3}
+      - {name: t5,  header: ["5 years"],  kind: est_ci, time: 5}
+      - {name: t10, header: ["10 years"], kind: est_ci, time: 10}
+      - {name: t12, header: ["12 years"], kind: est_ci, time: 12}
+    end_patterns: ['^Table 5\.15']
+    row_types:
+      average: '^CH average'
+      other: '^Other systems'
+    expect:
+      min_rows: 10

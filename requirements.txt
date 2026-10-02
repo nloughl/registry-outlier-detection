@@ -1,0 +1,8 @@
+pdfplumber>=0.11
+pypdfium2>=4.30
+PyYAML>=6.0
+pandas>=2.0
+openpyxl>=3.1
+Pillow>=10.0
+pytesseract>=0.3.10   # OCR for image tables (LROI); also needs the Tesseract program installed
+pytest>=8.0
