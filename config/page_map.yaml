@@ -1,6 +1,15 @@
 # Pages for each registry table. Written by `locate`; set status to 'confirmed'
 # (or run `python -m regextract confirm`) after checking the pages in the PDF.
 # A changed PDF (different sha256) is re-located and needs re-confirming.
+AOANJRR_2025/uka_casemix_sex_age:
+  confirmed_on: '2026-09-28'
+  located_on: '2026-09-28'
+  pages:
+  - 434
+  pdf: AOANJRR Full Report 2025.pdf
+  sha256: 91cca5231de30c4649c2c9260fb61f699c68adf2297d16ce71302c72a60aa3d7
+  status: confirmed
+  table_id: KP22
 AOANJRR_2025/uka_prosthesis_combination:
   confirmed_on: '2026-09-25'
   located_on: '2026-09-25'
@@ -35,6 +44,15 @@ LROI_2025/uka_cemented_component:
   sha256: ff8f2879701617b45216b95597a3ffb154cb56cbc246661bfe9ad00a62ecc226
   status: confirmed
   table_id: K054
+LROI_2025/uka_procedure_period:
+  confirmed_on: '2026-09-30'
+  located_on: '2026-09-30'
+  pages:
+  - 111
+  pdf: pdf-lroi-report-2025-3.pdf
+  sha256: ff8f2879701617b45216b95597a3ffb154cb56cbc246661bfe9ad00a62ecc226
+  status: confirmed
+  table_id: K052B
 LROI_2025/uka_uncemented_component:
   confirmed_on: '2026-09-25'
   located_on: '2026-09-25'
@@ -44,6 +62,24 @@ LROI_2025/uka_uncemented_component:
   sha256: ff8f2879701617b45216b95597a3ffb154cb56cbc246661bfe9ad00a62ecc226
   status: confirmed
   table_id: K055
+NJR_2025/knee_casemix_sex_age_design:
+  confirmed_on: '2026-09-28'
+  located_on: '2026-09-28'
+  pages:
+  - 52
+  - 53
+  - 54
+  - 55
+  - 56
+  - 57
+  - 58
+  - 59
+  - 60
+  - 61
+  pdf: NJR 22nd Annual Report 2025_Knees.pdf
+  sha256: 6ff18c128ef494fb4cf52467f8d454a16cdd646204b8ec2eca62c251c4a3de6e
+  status: confirmed
+  table_id: 3.K6
 NJR_2025/uka_brand:
   confirmed_on: '2026-09-25'
   located_on: '2026-09-25'

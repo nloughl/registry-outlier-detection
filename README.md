@@ -19,6 +19,14 @@ It uses fixed rules only: no LLM calls and no paid services. Running it twice on
 | EPRD | **2024** | 52: femoro-tibial combinations (unicondylar sections) | PDF text |
 | LROI | 2025 | K054 / K055: UKA by component combination (cemented / uncemented) | image → OCR + manual check |
 
+**Case-mix tables** (revision by sex / age / implant design) go to a separate file, `UKA_casemix_long.csv`:
+
+| Registry | Report | Table | Notes |
+|---|---|---|---|
+| AOANJRR | 2025 | KP22: CPR of primary UKA by gender and age (OA) | sex subtotals + TOTAL row kept |
+| LROI | 2025 | K052B: cumulative *major* revision of UKA by procedure period (2009-2010 ... 2021-2022) | image → OCR + manual check; one row per period, with `procedure_period`, `period_start` and `period_end` |
+| NJR | 2025 (Knees) | 3.K6: KM revision by sex, age, fixation, constraint and bearing | 10 sideways pages; only the `All unicondylar, cemented` / `All unicondylar, uncemented/hybrid` blocks (and their medial/lateral × bearing rows) are kept for UKA |
+
 ### Setup
 ```bash
 pip install -r requirements.txt
@@ -55,6 +63,7 @@ supply both UKA and TKA.
 |---|---|
 | `UKA_long.csv` | **Main file for R.** One row per device × time point |
 | `UKA_devices.csv` | One row per device: N, age, sex, hospitals, etc. |
+| `UKA_casemix_long.csv` | Case-mix tables: one row per stratum × sex × time point |
 | `tables/*_wide.csv` | Each table as published, including raw cell text and parse status, for auditing |
 | `validation_report.csv` | Every check that failed (error / warning / info) |
 | `extraction_log.csv` | Per page: caption found, headers found, records |
@@ -72,11 +81,21 @@ Key columns in `UKA_long.csv`:
 - `metric_type`, `metric_method`: **these differ between registries** (CPR, 1-KM, failure rate). Keep them in every comparison.
 - `source`, `verification`: `pdf_text`; or `manual` + `verified` / `unverified` for image tables.
 
+Key columns in `UKA_casemix_long.csv` (same provenance/metric/value columns as above, plus):
+- `row_type`: `stratum`; `subtotal` (AOANJRR sex totals); `group` (NJR design block such as "All unicondylar, cemented"); `total`.
+- `procedure_period`, `period_start`, `period_end`: LROI K052B procedure period, e.g. `2009-2010`.
+- `sex`, `age_group`: standardised to `<55`, `55-64`, `65-74`, `>=75` across registries. `age_group_raw` keeps the printed label.
+- `design_group`, `design_subgroup`, `implant_class`, `fixation`, `compartment`, `bearing`: NJR 3.K6 design strata (e.g. unicondylar / cemented / medial / MBT).
+- `row_flags`: `suppressed<4` = NJR suppressed a count below 4.
+
 ```r
 library(readr); library(dplyr)
 uka <- read_csv("outputs/UKA/UKA_long.csv") |>
   filter(row_type == "device", value_status == "ok")
+casemix <- read_csv("outputs/UKA/UKA_casemix_long.csv") |>
+  filter(value_status == "ok")
 ```
+To rebuild only one kind: `python -m regextract extract --procedure UKA --outputs casemix`.
 
 ### Checks (`validation_report.csv`)
 - lcl ≤ estimate ≤ ucl.
@@ -87,6 +106,9 @@ uka <- read_csv("outputs/UKA/UKA_long.csv") |>
 - Minimum row count per table.
 - AOANJRR: device rows add up to the TOTAL row.
 - LROI: the revision-type counts add up to total revisions.
+- Case-mix: age rows add up to their sex subtotal (AOANJRR), and medial/lateral rows add up to their design block
+  per sex (NJR). NJR's suppressed `<4` counts are allowed for.
+- Case-mix gold values: `tests/gold/UKA_casemix_gold_values.csv`.
 - `tests/gold/UKA_gold_values.csv`: known values the output must reproduce.
 
 ### LROI (image tables): verification step
@@ -108,6 +130,14 @@ warning. For a new report year, copy `review/*_ocr.csv` to `manual/`, correct it
   Run `locate`. If headers are reported missing, update the header phrases. The code does not need to change.
 - **TKA:** add table entries with `procedures: {TKA: ...}`, e.g. AOANJRR KT9–KT11 or NJR 3.K7(a). EPRD Table 52
   already maps its TKA sections. Then run `--procedure TKA`.
+- Config options used by the case-mix tables:
+  - `text_rotation: 90` for tables printed sideways.
+  - `strata` for male/female blocks printed side by side.
+  - `"1 year#2"` to match the 2nd occurrence of a repeated header.
+  - `anchor: [a, b]` for several N columns.
+  - `group_pattern` for hierarchical row labels.
+  - `procedures: {UKA: {groups: [...]}}` to keep only some design blocks.
+  - `output: casemix`.
 - Registry-specific code lives only in `regextract/hooks.py`, which splits labels into femoral/tibial/manufacturer.
 
 ### Known issues

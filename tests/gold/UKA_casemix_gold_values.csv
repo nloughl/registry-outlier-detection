@@ -1,0 +1,12 @@
+registry,report_year,table_key,stratum_label,sex,age_group,time_yr,estimate,lcl,ucl,n_total,source_of_gold
+AOANJRR,2025,uka_casemix_sex_age,Male,Male,<55,20,40.7,36.5,45.2,3186,PDF p433 Table KP22
+AOANJRR,2025,uka_casemix_sex_age,Female,Female,>=75,20,11.2,9.2,13.6,4198,PDF p433 Table KP22
+AOANJRR,2025,uka_casemix_sex_age,Male,Male,,10,10.2,9.7,10.7,28369,PDF p433 Table KP22 (sex subtotal)
+NJR,2025,knee_casemix_sex_age_design,"All unicondylar, cemented | medial, fixed",Male,<55,1,0.82,0.61,1.09,5859,PDF p53 Table 3.K6
+NJR,2025,knee_casemix_sex_age_design,"All unicondylar, uncemented/hybrid | medial, mobile",Female,55-64,10,7.22,6.29,8.28,6847,PDF p56 Table 3.K6
+NJR,2025,knee_casemix_sex_age_design,"All unicondylar, cemented | medial, MBT",Male,55-64,20,18.56,15.50,22.13,1294,PDF p56 Table 3.K6
+NJR,2025,knee_casemix_sex_age_design,"All unicondylar, uncemented/hybrid | lateral, mobile",Male,<55,1,5.45,1.79,15.96,55,PDF p54 Table 3.K6
+NJR,2025,knee_casemix_sex_age_design,"All unicondylar, cemented | medial, mobile",Male,>=75,20,8.46,6.69,10.67,3897,PDF p61 Table 3.K6
+LROI,2025,uka_procedure_period,2009-2010,,,15,19.65,18.21,21.10,3153,PDF p111 Figure K052B (image; checked visually)
+LROI,2025,uka_procedure_period,2021-2022,,,3,2.54,2.25,2.83,12405,PDF p111 Figure K052B (image; checked visually)
+LROI,2025,uka_procedure_period,2015-2016,,,10,9.62,8.51,10.72,5517,PDF p111 Figure K052B (image; checked visually)

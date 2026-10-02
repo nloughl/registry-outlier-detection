@@ -122,3 +122,69 @@ def lroi_combination(rec: dict) -> None:
     _star(rec, "femoral", "tibial")
     parts = [p for p in (rec["femoral"], rec["tibial"]) if p]
     rec["device_label"] = " / ".join(parts)
+
+
+# ------------------------------------------------------------------------ case-mix (sex / age) tables
+
+def std_age(s: str | None) -> str | None:
+    """'55 to 64' / '55-64' -> '55-64'; '≥75' -> '>=75'; '<55' -> '<55'."""
+    if not s:
+        return None
+    s = re.sub(r"\s+", " ", s).strip()
+    s = s.replace("≥", ">=").replace("≤", "<=")
+    s = re.sub(r"(\d+)\s*(?:to|-|–)\s*(\d+)", r"\1-\2", s)
+    return s.replace(" ", "")
+
+
+@hook("casemix")
+def casemix(rec: dict) -> None:
+    """Rows of case-mix tables: sex x age group, optionally within an implant design group."""
+    sex = _clean(rec.get("sex"))
+    if sex and sex.lower() in ("male", "female"):
+        rec["sex"] = sex.capitalize()
+    elif sex and sex.upper() == "TOTAL":
+        rec["sex"] = None
+        rec["device_label"] = "TOTAL"
+    rec["age_group"] = std_age(rec.get("age"))
+    rec["age_group_raw"] = _clean(rec.get("age"))
+    grp, sub = _clean(rec.get("design_group")), _clean(rec.get("design_subgroup"))
+    rec["design_group"], rec["design_subgroup"] = grp, sub
+    parts = [p for p in (grp, sub) if p] or [p for p in (rec.get("sex"),) if p]
+    if rec.get("device_label") != "TOTAL":
+        rec["device_label"] = " | ".join(parts)
+    if grp is not None or sub is not None:
+        rec["row_type"] = "group" if rec.get("is_group_row") else "stratum"
+    elif rec.get("device_label") == "TOTAL":
+        rec["row_type"] = "total"
+    elif rec.get("sex") and not rec.get("age_group"):
+        rec["row_type"] = "subtotal"
+    else:
+        rec["row_type"] = "stratum"
+
+    # NJR-style design descriptors
+    g = (grp or "").lower()
+    if "unicondylar" in g:
+        rec["implant_class"] = "unicondylar"
+    fx = re.search(r"\b(uncemented/hybrid|uncemented|cemented|hybrid)\b", g)
+    rec["fixation"] = fx.group(1) if fx else None
+    if sub:
+        m = re.match(r"^(medial|lateral)\s*,\s*(.+)$", sub, re.I)
+        if m:
+            rec["compartment"], rec["bearing"] = m.group(1).lower(), m.group(2).strip()
+        else:
+            m = re.match(r"^(unconstrained|posterior-stabilised|constrained condylar)\s*,?\s*(.*)$", sub, re.I)
+            if m:
+                rec["constraint"], rec["bearing"] = m.group(1).lower(), (m.group(2).strip() or None)
+
+
+@hook("lroi_period")
+def lroi_period(rec: dict) -> None:
+    """LROI 'by procedure year' rows: '2009-2010' (printed with a hyphen or en dash) -> a period stratum."""
+    raw = _clean(rec.get("period")) or ""
+    raw = re.sub(r"\s*[-\u2013\u2010\u00b7.]\s*", "-", raw)      # OCR reads the dash as '-', '.', or a middle dot
+    m = re.match(r"^(\d{4})-(\d{4})$", raw)
+    rec["procedure_period"] = raw or None
+    rec["period_start"], rec["period_end"] = (int(m.group(1)), int(m.group(2))) if m else (None, None)
+    rec["device_label"] = raw
+    rec["row_type"] = "stratum"
+

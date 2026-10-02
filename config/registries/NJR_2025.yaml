@@ -42,3 +42,54 @@ tables:
       total: '^All unicompartmental'
     expect:
       min_rows: 12
+
+  - key: knee_casemix_sex_age_design
+    output: casemix
+    table_id: "3.K6"
+    title: KM estimates of cumulative revision (95% CI) by sex, age, fixation, constraint and bearing, in primary knee replacements
+    procedures:
+      UKA:
+        groups: ['^All unicondylar']    # 'All unicondylar, cemented' / '..., uncemented/hybrid' and their medial/lateral rows
+      TKA:
+        groups: ['^All (cemented|uncemented|hybrid|pre-assembled)']
+    caption: 'Table 3\.K6 KM estimates of cumulative revision'
+    continuation: 'Table 3\.K6 \(continued\)'
+    stop_caption: 'Table 3\.K7'
+    text_rotation: 90                   # landscape table printed sideways on portrait pages
+    metric:
+      type: cumulative_revision_km
+      method: Kaplan-Meier (1-KM), percent
+      ci_level: 0.95
+      population: "All primary knee replacements, by sex, age group, fixation, constraint and bearing"
+      low_at_risk_rule: "Blue italics: <=250 cases at risk at that time point"
+      blank_rule: "Blank: fewer than 10 at risk; N '<4' suppressed"
+    anchor: [n_total_m, n_total_f]      # either sex may be suppressed ('<4')
+    anchor_pattern: '^<?[\d,]+$'
+    label_hook: casemix
+    fill_down: [age]                    # a few suppressed rows print no age; it is constant within each block
+    group_pattern: '^(All |Unconfirmed|Patellofemoral)'
+    group_label_column: design
+    strata:                             # male and female results sit side by side
+      - {suffix: _m, sex: Male}
+      - {suffix: _f, sex: Female}
+    columns:
+      - {name: design, header: ["Fixation, constraint"], kind: label, align: left}
+      - {name: age,    header: ["(years)"], kind: label, align: left}
+      - {name: n_total_m, header: ["N"],          kind: int}
+      - {name: t1_m,  header: ["1 year"],   kind: est_ci, time: 1}
+      - {name: t3_m,  header: ["3 years"],  kind: est_ci, time: 3}
+      - {name: t5_m,  header: ["5 years"],  kind: est_ci, time: 5}
+      - {name: t10_m, header: ["10 years"], kind: est_ci, time: 10}
+      - {name: t15_m, header: ["15 years"], kind: est_ci, time: 15}
+      - {name: t20_m, header: ["20 years"], kind: est_ci, time: 20}
+      - {name: n_total_f, header: ["N#2"],        kind: int}
+      - {name: t1_f,  header: ["1 year#2"],   kind: est_ci, time: 1}
+      - {name: t3_f,  header: ["3 years#2"],  kind: est_ci, time: 3}
+      - {name: t5_f,  header: ["5 years#2"],  kind: est_ci, time: 5}
+      - {name: t10_f, header: ["10 years#2"], kind: est_ci, time: 10}
+      - {name: t15_f, header: ["15 years#2"], kind: est_ci, time: 15}
+      - {name: t20_f, header: ["20 years#2"], kind: est_ci, time: 20}
+    end_patterns: ['^The observed outcomes', '^MBT=', '^Notes?:']
+    row_types: {}
+    expect:
+      min_rows: 20

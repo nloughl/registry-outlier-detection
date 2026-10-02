@@ -87,18 +87,28 @@ def _tok_eq(tok: str, target: str) -> bool:
 
 
 def find_phrase(lines: list[list[Word]], phrase: str, min_top: float = -1) -> tuple[float, float, float] | None:
-    """Find a phrase as consecutive words on one line. Returns (x0, x1, bottom)."""
+    """Find a phrase as consecutive words on one line. Returns (x0, x1, bottom).
+
+    'N#2' means the 2nd occurrence (reading order), for tables with repeated header blocks,
+    e.g. NJR 3.K6 prints 'N, 1 year ... 20 years' once for males and once for females."""
+    k = 1
+    m = re.match(r"^(.*)#(\d+)$", phrase.strip())
+    if m:
+        phrase, k = m.group(1), int(m.group(2))
     target = [_tok(t) for t in phrase.split() if _tok(t)]
     if not target:
         return None
+    seen = 0
     for line in lines:
         if line[0].top < min_top:
             continue
         toks = [_tok(w.text) for w in line]
         for i in range(len(toks) - len(target) + 1):
             if all(_tok_eq(toks[i + j], target[j]) for j in range(len(target))):
-                ws = line[i: i + len(target)]
-                return ws[0].x0, ws[-1].x1, max(w.bottom for w in ws)
+                seen += 1
+                if seen == k:
+                    ws = line[i: i + len(target)]
+                    return ws[0].x0, ws[-1].x1, max(w.bottom for w in ws)
     return None
 
 
@@ -199,7 +209,7 @@ def refine_label_numeric_bounds(columns: list[Column], words: list[Word], top: f
             continue
         xs = [w.x0 for w in words
               if top < w.yc < bottom and re.match(r"^[\d,]+[*†]?$", w.text)
-              and b.x0 - 45 <= w.x1 <= b.x1 + 6]
+              and b.x1 - 8 <= w.x1 <= b.x1 + 8]   # right-aligned under the header
         if xs:
             bnd = max(min(xs) - 1, a.x0 + 10)
             if bnd < a.hi:
@@ -221,7 +231,7 @@ def column_of(w: Word, columns: list[Column]) -> Column | None:
 def build_records(
     words: list[Word],
     columns: list[Column],
-    anchor: str,
+    anchor: str | list[str],
     data_top: float,
     data_bottom: float,
     section_patterns: list[str],
@@ -249,9 +259,9 @@ def build_records(
         keep.extend(line)
 
     # 2. anchors
-    anchor_col = next(c for c in columns if c.name == anchor)
+    anchor_names = [anchor] if isinstance(anchor, str) else list(anchor)  # several N columns allowed
     anchors = sorted(
-        (w for w in keep if column_of(w, columns) is anchor_col and re.match(anchor_pattern, w.text)),
+        (w for w in keep if (column_of(w, columns).name in anchor_names) and re.match(anchor_pattern, w.text)),
         key=lambda w: w.yc,
     )
     merged: list[float] = []
