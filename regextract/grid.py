@@ -132,13 +132,16 @@ def locate_columns(words: list[Word], columns: list[Column], min_top: float = -1
     above/below a table (e.g. '... after 12 years ...') being mistaken for the header row."""
     lines = cluster_lines(words)
     best = None
-    first = columns[0]
+    # start from the first column that has a header (columns printed without one use `fixed_columns`)
+    first = next((c for c in columns if c.header and c.header[0] != "__no_header__"), columns[0])
     starts = [h for alt in first.header for h in _find_all(lines, alt, min_top)]
     for x0, x1, bottom in starts:
         top = bottom - 8
         cand = [l for l in lines if top - band[0] <= l[0].top <= top + band[1]]
         found = {first.name: (x0, x1, bottom)}
-        for col in columns[1:]:
+        for col in columns:
+            if col is first:
+                continue
             for alt in col.header:
                 hit = find_phrase(cand, alt, min_top)
                 if hit:

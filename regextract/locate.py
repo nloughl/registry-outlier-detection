@@ -50,7 +50,7 @@ def _pat(p: str | None):
 def header_score(page, spec: dict) -> tuple[float, list[str]]:
     cols = make_columns(spec)
     cols, _ = locate_columns(words_for(page, spec), cols)
-    missing = [c.name for c in cols if not c.found]
+    missing = [c.name for c in cols if not c.found and c.name not in (spec.get("fixed_columns") or {})]
     return 1 - len(missing) / len(cols), missing
 
 

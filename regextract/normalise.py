@@ -7,7 +7,8 @@ LONG_COLUMNS = [
     "registry", "country", "report_year", "data_period", "table_key", "table_id", "procedure",
     "pdf_file", "pdf_page", "source", "verification",
     "section", "row_type", "device_label", "femoral", "tibial", "manufacturer_femoral",
-    "manufacturer_tibial", "compartment", "patella", 
+    "manufacturer_tibial", "compartment", "patella", "talar", "humeral", "ulnar", "diagnosis",
+    "implant_class", "constraint",
     "n_total", "n_revised", "hospitals", "age_median", "age_q1", "age_q3", "mean_age", "male_pct", "ccs",
     "years_implanted",
     "time_yr", "estimate", "lcl", "ucl", "n_at_risk", "value_status", "low_at_risk",
@@ -23,7 +24,7 @@ CASEMIX_COLUMNS = [
     "pdf_file", "pdf_page", "source", "verification",
     "row_type", "stratum_label", "design_group", "design_subgroup", "implant_class", "fixation",
     "compartment", "constraint", "bearing", "sex", "age_group", "age_group_raw",
-    "procedure_period", "period_start", "period_end",
+    "procedure_period", "period_start", "period_end", "diagnosis",
     "n_total", "n_revised",
     "time_yr", "estimate", "lcl", "ucl", "n_at_risk", "value_status", "low_at_risk",
     "metric_type", "metric_method", "ci_level", "population", "row_flags",
@@ -81,6 +82,8 @@ def to_long(rows: list[dict], cfg: dict, spec: dict, procedure: str) -> list[dic
             "manufacturer_femoral": r.get("manufacturer_femoral"),
             "manufacturer_tibial": r.get("manufacturer_tibial"),
             "compartment": r.get("compartment"), "patella": r.get("patella"),
+            "talar": r.get("talar"), "humeral": r.get("humeral"), "ulnar": r.get("ulnar"),
+            "diagnosis": r.get("diagnosis"),
             "n_total": r.get("n_total"), "n_revised": r.get("n_revised"), "hospitals": r.get("hospitals"),
             "age_median": r.get("age_median"), "age_q1": r.get("age_q1"), "age_q3": r.get("age_q3"),
             "mean_age": r.get("mean_age"),
@@ -97,6 +100,10 @@ def to_long(rows: list[dict], cfg: dict, spec: dict, procedure: str) -> list[dic
             "procedure_period": r.get("procedure_period"), "period_start": r.get("period_start"),
             "period_end": r.get("period_end"),
         }
+        # constant fields a table applies to every row (e.g. AOANJRR ET6 = diagnosis Fracture/Dislocation)
+        for k, v in (spec.get("set_fields") or {}).items():
+            if base.get(k) in (None, ""):
+                base[k] = v
         for c in tcols:
             p = r.get(c["name"]) or {}
             out.append({**base, "time_yr": c["time"], "estimate": p.get("estimate"), "lcl": p.get("lcl"),

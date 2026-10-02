@@ -62,3 +62,35 @@ def test_casemix_gold_values():
     assert not missing, f"gold rows not found: {missing}"
     assert not wrong, f"mismatches: {wrong}"
 
+
+RARE_GOLD = ROOT / "tests" / "gold" / "RARE_gold_values.csv"
+
+
+@pytest.mark.parametrize("procedure", ["ANKLE", "ELBOW"])
+def test_rare_joint_gold_values(procedure):
+    files = {"device": OUT_DIR / procedure / f"{procedure}_long.csv",
+             "casemix": OUT_DIR / procedure / f"{procedure}_casemix_long.csv"}
+    if not all(f.exists() for f in files.values()):
+        pytest.skip("run the pipeline first")
+    rows = {}
+    for kind, f in files.items():
+        with open(f, newline="", encoding="utf-8") as fh:
+            rows[kind] = list(csv.DictReader(fh))
+    with open(RARE_GOLD, newline="", encoding="utf-8") as f:
+        gold = [g for g in csv.DictReader(f) if g["procedure"] == procedure]
+    missing, wrong = [], []
+    for g in gold:
+        label_col = "device_label" if g["kind"] == "device" else "stratum_label"
+        hits = [r for r in rows[g["kind"]] if r["registry"] == g["registry"] and r["table_key"] == g["table_key"]
+                and r[label_col] == g["label"] and float(r["time_yr"]) == float(g["time_yr"])]
+        if not hits:
+            missing.append((g["registry"], g["label"], g["time_yr"]))
+            continue
+        r = hits[0]
+        if int(float(r["n_total"])) != int(g["n_total"]):
+            wrong.append((g["label"], "n_total", r["n_total"], g["n_total"]))
+        for k in ("estimate", "lcl", "ucl"):
+            if abs(float(r[k]) - float(g[k])) > 1e-9:
+                wrong.append((g["label"], g["time_yr"], k, r[k], g[k]))
+    assert not missing, f"gold rows not found: {missing}"
+    assert not wrong, f"mismatches: {wrong}"
