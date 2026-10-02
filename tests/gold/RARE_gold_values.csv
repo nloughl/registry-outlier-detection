@@ -1,0 +1,15 @@
+procedure,kind,registry,table_key,label,time_yr,estimate,lcl,ucl,n_total,source_of_gold
+ANKLE,device,AOANJRR,ankle_prosthesis_combination,Hintermann Series H3,3,8.4,6.4,11.1,573,AOANJRR ankle suppl. p15 Table A15
+ANKLE,device,AOANJRR,ankle_prosthesis_combination,Infinity,5,3.7,2.4,5.7,1515,AOANJRR ankle suppl. p15 Table A15
+ANKLE,device,NJR,ankle_brand,Zenith,5,7.33,5.93,9.04,1171,NJR ankles p36 Table 3.A4
+ANKLE,device,NJR,ankle_brand,Infinity / Inbone,3,1.75,0.77,3.94,541,NJR ankles p36 Table 3.A4
+ANKLE,casemix,NJR,ankle_sex_age,All cases,10,9.54,8.75,10.39,11321,NJR ankles p32 Table 3.A3
+ANKLE,casemix,AOANJRR,ankle_diagnosis,Osteoarthritis,15,17.3,15.4,19.4,5079,AOANJRR ankle suppl. p12 Table A11
+ANKLE,casemix,AOANJRR,ankle_period,Pre 2015,15,20.5,18.4,22.9,1521,AOANJRR ankle suppl. p14 Table A14
+ANKLE,casemix,LROI,ankle_overall,Primary ankle,10,10.89,8.09,13.69,1460,LROI p153 A014B (image; checked visually)
+ELBOW,device,AOANJRR,elbow_total_stem_oa,Discovery,10,31.8,19.7,48.8,61,AOANJRR elbow suppl. p17 Table ET7
+ELBOW,device,NJR,elbow_brand,Coonrad Morrey,11,9.07,7.58,10.84,2231,NJR elbows p49 Table 3.E8
+ELBOW,device,NJR,elbow_brand,Latitude / Latitude EV Stem,3,10.58,5.41,20.15,240,NJR elbows p49 Table 3.E8
+ELBOW,casemix,NJR,elbow_indication_type,Elective | Total elbow,10,12.02,10.59,13.63,3516,NJR elbows p42 Table 3.E6
+ELBOW,casemix,AOANJRR,elbow_class_diagnosis,Total Elbow | Osteoarthritis,14,28.4,23.8,33.6,657,AOANJRR elbow suppl. p18 Table ET9
+ELBOW,casemix,LROI,elbow_type,Total elbow arthroplasty,9,18.32,14.30,22.35,816,LROI p224 E017B (image; checked visually)

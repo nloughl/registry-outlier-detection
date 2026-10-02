@@ -140,6 +140,80 @@ warning. For a new report year, copy `review/*_ocr.csv` to `manual/`, correct it
   - `output: casemix`.
 - Registry-specific code lives only in `regextract/hooks.py`, which splits labels into femoral/tibial/manufacturer.
 
+---
+
+## Rare joints: total ankle and total elbow replacement
+
+Run these with `--procedure ANKLE` or `--procedure ELBOW`. Outputs go to `outputs/ANKLE/` and `outputs/ELBOW/`, with the same file layout as UKA:
+- `<PROC>_long.csv`: model rows.
+- `<PROC>_casemix_long.csv`: overall, diagnosis, period, class and sex/age rows.
+
+The registry mean used in the funnels is picked from these rows in the R repo (`config/rare_joint_means.csv`), not here. Extraction keeps every row as printed.
+
+```bash
+python -m regextract locate  --procedure ANKLE     # then check pages and confirm, as for UKA
+python -m regextract extract --procedure ANKLE
+python -m regextract extract --procedure ELBOW
+```
+
+| Registry | Document | Table | Content | Output |
+|---|---|---|---|---|
+| AOANJRR | Ankle suppl. 2025 (`AOANJRR_2025_ankle.yaml`) | A11 | Total ankle by primary diagnosis | casemix (`diagnosis`) |
+| | | A14 | Total ankle by period (pre-2015 / 2015-2024) | casemix (`procedure_period`) |
+| | | A15 | Total ankle by prosthesis combination (tibia / talar) | device |
+| AOANJRR | Elbow & wrist suppl. 2025 (`AOANJRR_2025_elbow.yaml`) | ET6 / ET7 / ET8 | Total elbow (no radial) by humeral stem, for fracture / OA / RA | device (`diagnosis`) |
+| | | ET9 | Total elbow and humeral hemi by class × diagnosis | casemix (`implant_class`, `diagnosis`) |
+| NJR | Ankles 2025 (`NJR_2025_ankle.yaml`) | 3.A3 | All cases, then sex × age | casemix (`row_type` total / subtotal / stratum) |
+| | | 3.A4 | Ankle brands (printed sideways) | device (`tibial`, `talar`) |
+| NJR | Elbows 2025 (`NJR_2025_elbow.yaml`) | 3.E6 | Procedure type within acute trauma / elective (2 pages) | casemix (`diagnosis` = indication, `implant_class`) |
+| | | 3.E8 | Elbow brands, grouped: total elbow / radial head / distal humeral hemi (sideways) | device (`section` = `implant_class`, `constraint` = linked) |
+| LROI | Annual report 2025 (`LROI_2025.yaml`) | A014B p153 | All primary ankles, overall | casemix (total) |
+| | | A015B p153 | Total ankle for OA, by procedure period | casemix (`procedure_period`) |
+| | | E016B p224 | All primary elbows, overall | casemix (total) |
+| | | E017B p224 | Total elbow and radial head, by type | casemix (`implant_class`) |
+
+LROI publishes no model-level rates for ankle or elbow, so it contributes a registry mean only.
+
+### Decisions (October 2026)
+- **Elbow scope is total elbow replacement only.** AOANJRR's supplement is total elbow only (without radial replacement). The funnels compare:
+  - AOANJRR ET6–ET9 total elbow
+  - NJR 3.E8 total-elbow brands and the 3.E6 total-elbow rows
+  - LROI E017B total-elbow row
+
+  Radial head, distal humeral hemi, lateral resurfacing and NJR "unconfirmed" rows are extracted but not plotted. Unconfirmed rows are flagged `unconfirmed_procedure_type`.
+- **AOANJRR elbow models:** all three diagnosis tables are extracted, and each row keeps its `diagnosis`. By default the funnel code pools them into one point per humeral stem (n-weighted). It can optionally show each diagnosis against that diagnosis's ET9 rate.
+- **AOANJRR ankle mean:** the n-weighted pool of **all A11 diagnosis rows**. This is the same population as the A15 models (all diagnoses and years, n = 5,379). A14 is extracted for period funnels, comparing 2015–2024 with pre-2015.
+- **NJR elbow mean:** the n-weighted pool of the two 3.E6 **total elbow replacement** rows, acute trauma (1,224) and elective (3,516). This matches the 3.E8 total-elbow brand rows, which include both indications.
+- **NJR ankle mean:** 3.A3 "All cases".
+- **LROI ankle mean:** A014B "Primary ankle" (all primary ankles, n = 1,460 from the caption). LROI notes that ankle revisions are under-registered. A015B (total ankle for OA, by period) is the alternative.
+- **LROI elbow mean:** E017B "Total elbow arthroplasty", following the total-elbow scope. E016B (all elbow types, n = 1,534) is also extracted.
+  - E017B prints no per-type N. The manual copy uses the registered counts from Table E001: 816 total elbows and 599 radial heads (2014–2024). This is approximate, since E017's survival analysis covers 1,405 procedures across both types.
+- **Model names:** extraction keeps the names as printed and only strips report marks:
+  - `*`: not used in the report year (kept as the flag `not_used_in_report_year_*`)
+  - the AOANJRR footnote "1" on "Hintermann Series H3"
+  - wrapped hyphens
+
+  Names are harmonised across registries in the R repo (`config/rare_device_families.csv`), e.g. BOX/Box, S.T.A.R/Star, Coonrad/Morrey vs Coonrad Morrey, Latitude.
+- **LROI values** are a manual transcription from the images, marked `unverified` as for the other LROI tables. Every estimate equals the midpoint of its CI, which catches 3/5 misreads. `review/*_ocr_vs_manual.csv` lists where OCR disagrees.
+- **Time points differ by registry:**
+  - AOANJRR: 1/3/5/(7)/10/15; ET9 has 14
+  - NJR: 1/3/5/7/10 plus 11 (elbow) or 14 (ankle)
+  - LROI: 1/3/5/7/10; E017B has 9 instead of 10
+
+  1, 3 and 5 years are common to all three.
+
+### Parser features added for these tables
+- `document:` in a config. A registry can have several PDFs per report year (main report + supplements). The latest config is kept per registry *and* document.
+- `set_fields:` sets constant fields on every row of a table, e.g. ET6 `diagnosis: Fracture/Dislocation`.
+- `fixed_columns:` fixes the x-position of columns printed without a header (NJR 3.E6 / 3.E8 row labels).
+- `span_columns:` handles label cells drawn around several rows. NJR 3.E8 prints "Total elbow replacement brands" once per block, and the drawn cell rectangle assigns it to every row inside.
+- `column_bounds:` sets explicit column boundaries where values start left of their header (NJR 3.A3 / 3.A4).
+- Manual copies of tables without an N column (LROI overall figures) can carry `n_total`.
+- New output columns:
+  - device: `talar`, `humeral`, `ulnar`, `diagnosis`, `implant_class`, `constraint`
+  - case-mix: `diagnosis`
+- Gold values: `tests/gold/RARE_gold_values.csv`.
+
 ### Known issues
 - The EPRD PDF in `pdfs/` is the **2024** report (data to 2023). The 2025 report uses Table 60 for the same content.
   Add that PDF and copy `EPRD_2024.yaml` to `EPRD_2025.yaml`, changing the table number to 60.

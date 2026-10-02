@@ -1,0 +1,93 @@
+registry: AOANJRR
+document: elbow_wrist_supplement     # separate PDF from the main report (see config.load_registry_configs)
+country: Australia
+report_year: 2025
+data_period: "to 2024-12-31"
+pdf_glob: "*Elbow*Wrist*Supplementary*AOANJRR*.pdf"
+notes: >
+  Total elbow replacement WITHOUT radial replacement. Model-level rates are only given per primary
+  diagnosis (ET6 fracture/dislocation, ET7 osteoarthritis, ET8 rheumatoid arthritis); each row keeps its
+  diagnosis. The funnel code pools them to one point per humeral stem by default (decision 2026-10).
+  No table gives an all-diagnosis total-elbow estimate: ET9 gives one row per class x diagnosis.
+
+_aoa_stem_cols: &aoa_stem_cols
+  - {name: humeral,   header: ["Humeral Stem"], kind: label, align: left}
+  - {name: n_revised, header: ["Revised"], kind: int}
+  - {name: n_total,   header: ["Total"],   kind: int}
+  - {name: t1,  header: ["1 Yr"],   kind: est_ci, time: 1}
+  - {name: t3,  header: ["3 Yrs"],  kind: est_ci, time: 3}
+  - {name: t5,  header: ["5 Yrs"],  kind: est_ci, time: 5}
+  - {name: t10, header: ["10 Yrs"], kind: est_ci, time: 10}
+  - {name: t15, header: ["15 Yrs"], kind: est_ci, time: 15}
+
+_aoa_stem: &aoa_stem
+  procedures:
+    ELBOW: {}
+  metric:
+    type: cumulative_percent_revision
+    method: Kaplan-Meier (1-KM), percent
+    ci_level: 0.95
+    population: "Primary total elbow replacement without radial replacement; humeral stems with >10 procedures"
+  anchor: n_total
+  label_hook: aoanjrr_elbow_stem
+  columns: *aoa_stem_cols
+  end_patterns: ['^Note:']
+  expect:
+    min_rows: 4
+    totals_check: true
+
+tables:
+  - <<: *aoa_stem
+    key: elbow_total_stem_fracture
+    table_id: ET6
+    title: CPR of primary total elbow without radial replacement by humeral prosthesis (fracture/dislocation)
+    caption: 'Table ET6 Cumulative Percent Revision of Primary Total Elbow'
+    stop_caption: 'Table ET7'
+    set_fields: {diagnosis: Fracture/Dislocation}
+
+  - <<: *aoa_stem
+    key: elbow_total_stem_oa
+    table_id: ET7
+    title: CPR of primary total elbow without radial replacement by humeral prosthesis (osteoarthritis)
+    caption: 'Table ET7 Cumulative Percent Revision of Primary Total Elbow'
+    stop_caption: 'Table ET8'
+    set_fields: {diagnosis: Osteoarthritis}
+
+  - <<: *aoa_stem
+    key: elbow_total_stem_ra
+    table_id: ET8
+    title: CPR of primary total elbow without radial replacement by humeral prosthesis (rheumatoid arthritis)
+    caption: 'Table ET8 Cumulative Percent Revision of Primary Total Elbow'
+    stop_caption: 'Table ET9'
+    set_fields: {diagnosis: Rheumatoid Arthritis}
+
+  - key: elbow_class_diagnosis
+    output: casemix
+    table_id: ET9
+    title: CPR of primary total elbow without radial replacement by primary diagnosis and class
+    procedures:
+      ELBOW: {}
+    caption: 'Table ET9 Cumulative Percent Revision of Primary Total Elbow'
+    stop_caption: 'Figure ET3'
+    metric:
+      type: cumulative_percent_revision
+      method: Kaplan-Meier (1-KM), percent
+      ci_level: 0.95
+      population: "Primary total elbow (and humeral hemi) without radial replacement, by class and primary diagnosis"
+    anchor: n_total
+    label_hook: stratum
+    fill_down: [implant_class]
+    columns:
+      - {name: implant_class, header: ["Class"], kind: label, align: left}
+      - {name: diagnosis, header: ["Primary Diagnosis"], kind: label, align: left}
+      - {name: n_revised, header: ["Revised"], kind: int}
+      - {name: n_total,   header: ["Total"],   kind: int}
+      - {name: t1,  header: ["1 Yr"],   kind: est_ci, time: 1}
+      - {name: t3,  header: ["3 Yrs"],  kind: est_ci, time: 3}
+      - {name: t5,  header: ["5 Yrs"],  kind: est_ci, time: 5}
+      - {name: t10, header: ["10 Yrs"], kind: est_ci, time: 10}
+      - {name: t14, header: ["14 Yrs"], kind: est_ci, time: 14}
+    end_patterns: ['^Note:', '^Figure ET3']
+    expect:
+      min_rows: 4
+      totals_check: {parts: [stratum]}

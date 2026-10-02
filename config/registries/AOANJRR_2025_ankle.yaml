@@ -1,0 +1,97 @@
+registry: AOANJRR
+document: ankle_supplement           # separate PDF from the main report
+country: Australia
+report_year: 2025
+data_period: "to 2024-12-31"
+pdf_glob: "*ankle*supplementary*aoanjrr*.pdf"
+notes: >
+  Primary total ankle replacement. A15 (models) covers all diagnoses and years (n = 5,379); there is no
+  all-ankle estimate row, so the funnel mean is the n-weighted pool of the A11 diagnosis rows (same
+  population as A15; decision 2026-10). A14 (pre-2015 vs 2015-2024) is extracted for period funnels.
+
+_aoa_metric: &aoa_metric
+  type: cumulative_percent_revision
+  method: Kaplan-Meier (1-KM), percent
+  ci_level: 0.95
+  population: "Primary total ankle replacement"
+
+tables:
+  - key: ankle_diagnosis
+    output: casemix
+    table_id: A11
+    title: CPR of primary total ankle replacement by primary diagnosis
+    procedures:
+      ANKLE: {}
+    caption: 'Table A11 Cumulative Percent Revision of Primary Total Ankle'
+    stop_caption: 'Figure A5'
+    metric: *aoa_metric
+    anchor: n_total
+    label_hook: stratum
+    columns:
+      - {name: diagnosis, header: ["Primary Diagnosis"], kind: label, align: left}
+      - {name: n_revised, header: ["Revised"], kind: int}
+      - {name: n_total,   header: ["Total"],   kind: int}
+      - {name: t1,  header: ["1 Yr"],   kind: est_ci, time: 1}
+      - {name: t3,  header: ["3 Yrs"],  kind: est_ci, time: 3}
+      - {name: t5,  header: ["5 Yrs"],  kind: est_ci, time: 5}
+      - {name: t7,  header: ["7 Yrs"],  kind: est_ci, time: 7}
+      - {name: t10, header: ["10 Yrs"], kind: est_ci, time: 10}
+      - {name: t15, header: ["15 Yrs"], kind: est_ci, time: 15}
+    end_patterns: ['^Note:', '^Figure A5', '^Number at Risk']
+    expect:
+      min_rows: 5
+      totals_check: {parts: [stratum, other]}
+
+  - key: ankle_period
+    output: casemix
+    table_id: A14
+    title: CPR of primary total ankle replacement by period (pre-2015 vs 2015-2024)
+    procedures:
+      ANKLE: {}
+    caption: 'Table A14 Cumulative Percent Revision of Primary Total Ankle'
+    stop_caption: 'Figure A7'
+    metric: *aoa_metric
+    anchor: n_total
+    label_hook: stratum
+    columns:
+      - {name: period, header: ["Period"], kind: label, align: left}
+      - {name: n_revised, header: ["Revised"], kind: int}
+      - {name: n_total,   header: ["Total"],   kind: int}
+      - {name: t1,  header: ["1 Yr"],   kind: est_ci, time: 1}
+      - {name: t3,  header: ["3 Yrs"],  kind: est_ci, time: 3}
+      - {name: t5,  header: ["5 Yrs"],  kind: est_ci, time: 5}
+      - {name: t7,  header: ["7 Yrs"],  kind: est_ci, time: 7}
+      - {name: t10, header: ["10 Yrs"], kind: est_ci, time: 10}
+      - {name: t15, header: ["15 Yrs"], kind: est_ci, time: 15}
+    end_patterns: ['^Note:', '^Figure A7', '^Number at Risk']
+    expect:
+      min_rows: 2
+      totals_check: {parts: [stratum]}
+
+  - key: ankle_prosthesis_combination
+    table_id: A15
+    title: CPR of primary total ankle replacement by prosthesis combination
+    procedures:
+      ANKLE: {}
+    caption: 'Table A15 Cumulative Percent Revision of Primary Total Ankle'
+    metric:
+      <<: *aoa_metric
+      population: "Primary total ankle replacement, all diagnoses; combinations with >15 procedures"
+    anchor: n_total
+    label_hook: aoanjrr_ankle_combo
+    fill_down: [tibial]                 # a tibia used with several talars is printed once
+    columns:
+      - {name: tibial, header: ["Tibia"], kind: label, align: left}
+      - {name: talar,  header: ["Talar"], kind: label, align: left}
+      - {name: n_revised, header: ["Revised"], kind: int}
+      - {name: n_total,   header: ["Total"],   kind: int}
+      - {name: t1,  header: ["1 Yr"],   kind: est_ci, time: 1}
+      - {name: t3,  header: ["3 Yrs"],  kind: est_ci, time: 3}
+      - {name: t5,  header: ["5 Yrs"],  kind: est_ci, time: 5}
+      - {name: t7,  header: ["7 Yrs"],  kind: est_ci, time: 7}
+      - {name: t10, header: ["10 Yrs"], kind: est_ci, time: 10}
+      - {name: t15, header: ["15 Yrs"], kind: est_ci, time: 15}
+    end_patterns: ['^Note:']
+    expect:
+      min_rows: 10
+      totals_check: true
